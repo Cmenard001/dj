@@ -1,0 +1,10 @@
+
+# VSCode specific stuff
+**/.vscode/settings.json
+
+# build output
+out/
+build/
+
+# DJ generated files
+dj_graph.png
