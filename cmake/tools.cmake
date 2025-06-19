@@ -14,7 +14,7 @@ endmacro()
 # if INCLUDE_DIRS is not defined, it will be created with a global scope
 macro(add_include_dirs)
     foreach(dir ${ARGN})
-        list(APPEND INCLUDE_DIRS "${SRC_PREFIX}/${dir}")
+        list(APPEND INCLUDE_DIRS "${dir}")
     endforeach()
 endmacro()
 
