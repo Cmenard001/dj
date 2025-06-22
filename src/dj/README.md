@@ -115,4 +115,213 @@ Ces positions statiques sont ajoutées au graphe de la même manière que les ob
 
 
 #### Calcul du chemin
-Pour estimer la durée d'un déplacement, DJ prend en compte les `END_AT_BRAKE` et les `END_AT_LAST_POINT`. Cela signifie qu'il est impossible de pondérer directement les arêtes du graphe, car la durée d'un d
+Pour estimer la durée d'un déplacement, DJ prend en compte les `END_AT_BRAKE` et les `END_AT_LAST_POINT`. Cela signifie qu'il est impossible de pondérer directement les arêtes du graphe, car la durée d'un déplacement dépend de l'ensemble du chemin. DJ calcule donc la durée d'un chemin entier.
+
+Une fois ces informations en place, DJ peut utiliser un algorithme de recherche de chemin classique pour trouver le chemin le plus rapide.
+
+Deux algorithmes sont disponibles dans DJ : **Dijkstra** et **A***.
+
+**Avantages et inconvénients :**
+- Dijkstra offre des solutions plus pertinentes qu'A*. A* est efficace pour des graphes très grands et denses, mais ce n'est pas le cas ici. De plus, A* est optimal lorsque la pondération des arêtes est liée aux distances entre les sommets, ce qui n'est pas le cas ici. En effet, le robot accélère ou freine quasiment tout le temps. Cela joue en faveur de une pondération basée sur la durée des déplacements.
+- A* est moins coûteux en temps de calcul que Dijkstra.
+
+Il est possible de changer l'algorithme utilisé en modifiant la constante `DJ_SOLVER_TYPE` dans le fichier [`dj_solver/dj_solver.h`](dj_solver/dj_solver.h).
+
+### Conclusion
+Une fois le chemin le plus rapide déterminé, il ne reste plus qu'à le suivre. La dernière étape est une gestion classique par MAE (Machine à États). Le chemin est recalculé de temps en temps. Si un évitement est déclenché, DJ recommence le calcul du chemin dans une limite de X tentatives. Pour plus de détails, voir [`dj_try_going`](./dj_launcher/dj_try_going.c).
+
+## Mathématiques
+### Conversion des obstacles dynamiques en obstacles statiques
+On peut retrouver l'application de ces mathématiques dans le fichier [`dj_obstacle/dj_obstacle_dynamic.c`](dj_obstacle/dj_obstacle_dynamic.c).
+Si vous n'avez pas d'editeur LaTeX, vous pouvez utiliser ce fichier mais il est recommandé d'utiliser un éditeur LaTeX pour une meilleure lisibilité.
+#### Rappel
+
+Le but est de déterminer la position de l'obstacle dans l'espace-temps depuis la position du robot.
+
+**Espace-temps** : comme l'espace-temps classique, mais avec la vitesse du robot au lieu de celle de la lumière.
+Le but est de connaître la ou les positions possibles de l'obstacle pour un trajet optimal.
+On limite la position d'un obstacle à son **centre**.
+
+---
+
+#### Notations
+
+##### Temps
+- $t$ : temps absolu
+- $t_{\text{adv}}$ : temps où l'obstacle a été mis à jour
+- $t_{\text{rob}}$ : début de l'observation
+
+##### Obstacle
+- $A_{\text{adv}}(x, y)$ : accélération de l'obstacle
+- $V_{\text{adv}}(x, y)$ : vitesse initiale de l'obstacle
+- $P_{\text{adv}}(x, y)$ : position initiale de l'obstacle
+
+##### Robot
+- $A_{\text{rob}}$ : accélération du robot
+- $V_{\text{rob}}$ : vitesse initiale du robot
+- $P_{\text{rob}}$ : position initiale du robot
+
+---
+
+#### Calculs
+
+##### 1) Distance du robot en fonction du temps
+$$
+D_{\text{rob}} = V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2
+$$
+
+##### 2) Position de l'obstacle en fonction du temps
+$$
+P_{\text{advx}} = P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2
+$$
+$$
+P_{\text{advy}} = P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advy}} \cdot (t - t_{\text{adv}})^2
+$$
+
+##### 3) Évolution de la distance entre le robot et l'obstacle en fonction du temps
+
+$$
+D_{\text{adv}} = \sqrt{(dx)^2 + (dy)^2}
+$$
+
+Avec :
+- $dx$ et $dy$ : la différence de position entre le robot et l'obstacle.
+
+Or :
+$$
+dx = P_{\text{advx}} - P_{\text{robix}}
+$$
+$$
+dy = P_{\text{advy}} - P_{\text{robiy}}
+$$
+
+Donc :
+$$
+D_{\text{adv}} = \sqrt{(P_{\text{advx}} - P_{\text{robix}})^2 + (P_{\text{advy}} - P_{\text{robiy}})^2}
+$$
+$$
+\iff D_{\text{adv}} = \sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2}
+$$
+
+---
+
+##### 4) Solutions
+
+Les solutions apparaissent lorsque :
+$$
+D_{\text{adv}} = D_{\text{rob}}
+$$
+
+Donc lorsque :
+$$
+\sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2} = V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2
+$$
+
+Ce qui donne :
+$$
+\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2 = \Big(V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2\Big)^2
+$$
+
+Soit :
+$$
+0 = \left(\frac{A_{\text{advx}}^2}{2} - \frac{A_{\text{rob}}^2}{4}\right) t^4
++ \left(A_{\text{advx}}(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) + A_{\text{advx}}(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) - A_{\text{rob}}(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}})\right) t^3
+$$
+$$
++ \Bigg(\left(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}\right)^2
++ \left(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}\right)^2
+- \left(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}}\right)^2
+$$
+$$
++ A_{\text{advx}} \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)
++ A_{\text{advx}} \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)
+$$
+$$
++ A_{\text{rob}} \cdot \left(V_{\text{robi}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)\Bigg) t^2
+$$
+$$
++ \Bigg(2 \cdot \left(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}\right) \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)
+$$
+$$
++ 2 \cdot \left(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}\right) \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)
+$$
+$$
++ 2 \cdot \left(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}}\right) \cdot \left(V_{\text{robi}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)\Bigg) t
+$$
+$$
++ \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)^2
++ \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)^2
+$$
+$$
+- \left(V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)^2
+$$
+
+
+L'équation est un peu longue mais résumons-la :
+Elle est de la forme
+$$
+0 = a \cdot t^4 + b \cdot t^3 + c \cdot t^2 + d \cdot t + e
+$$
+
+
+##### Coefficients de l'équation
+- $a = \frac{A_{\text{advx}}^2}{2} - \frac{A_{\text{rob}}^2}{4}$
+- $b = A_{\text{advx}}(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) + A_{\text{advx}}(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) - A_{\text{rob}}(V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}})$
+- $c = \big((V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}})^2 + (V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}})^2 - (V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}})^2 \big)$
+  $+ A_{\text{advx}} \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)$
+  $+ A_{\text{advx}} \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)$
+  $+ A_{\text{rob}} \cdot \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)$
+
+- $d = 2 \cdot (V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)$
+  $+ 2 \cdot (V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)$
+  $+ 2 \cdot (V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}}) \cdot \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)$
+
+- $e = \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)^2$
+  $+ \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)^2$
+  $- \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)^2$
+
+
+##### Résolution numérique
+Cette équation est une équation du quatrième degré, donc il y a de 0 à 4 solutions.
+Les solutions générales sont complexes, donc on ne calculera pas la forme générale.
+
+Pour rappel, on cherche les racines du polynôme :
+$$
+a \cdot t^4 + b \cdot t^3 + c \cdot t^2 + d \cdot t + e
+$$
+
+On a l'avantage de pouvoir limiter les solutions à un intervalle de temps $[0, t_{\text{max}}]$.
+En effet, il n'a aucun sens de chercher une solution négative ou supérieure à $t_{\text{max}}$.
+
+De plus, $t_{\text{max}}$ est relativement petit, car :
+- On ne cherche pas à prédire la position de l'obstacle dans un futur lointain (imprécision de la prédiction).
+- De toute façon, n'importe quel robot aura traversé le terrain ou changé de direction en quelques secondes seulement.
+
+###### Méthode de recherche des solutions
+Pour tout $t \in [0, t_{\text{max}}]$, on calcule la valeur de l'équation et on regarde si elle est de signe opposé à la précédente.
+Si c'est le cas, alors il y a une solution entre \(t\) et \(t - 1\).
+
+###### Calcul de la position de l'obstacle pour chaque solution
+Pour chaque solution trouvée \(t\), on calcule la position de l'obstacle :
+$$
+P_{\text{advx}} = P_{\text{advix}} + V_{\text{advix}} \cdot t + \frac{1}{2} \cdot A_{\text{advx}} \cdot t^2
+$$
+$$
+P_{\text{advy}} = P_{\text{adviy}} + V_{\text{adviy}} \cdot t + \frac{1}{2} \cdot A_{\text{advx}} \cdot t^2
+$$
+avec \(t\) la solution trouvée.
+
+
+##### Conclusion
+On obtient aucune, une ou plusieurs positions possibles de l'obstacle dans l'espace-temps.
+
+
+## TODO
+
+Les tâches à effectuer pour améliorer DJ :
+
+- [ ] Gérer les obstacles dynamiques qui changent de forme.
+- [ ] Prendre en compte la pré-rotation du robot avant la première translation.
+- [ ] Prendre en compte le dernier déplacement en fonction de son type (`END_AT_BRAKE` ou `END_AT_LAST_POINT`).
+- [ ] Implémenter une interaction avec le système de propulsion pour demander les coefficients de propulsion et éviter la redondance de code. Cela permettrait également de gérer les changements d'accélération pendant le match.
+- [ ] Implémenter le solver utilisant A*.
