@@ -17,7 +17,7 @@
 /**
  * @brief Number of tests to be performed by the DJ tester.
  */
-#define DJ_TESTER_NB_TESTS (10)
+#define DJ_TESTER_NB_TESTS (200)
 
 #if DJ_TESTER_NB_TESTS > DJ_TEST_SET_MAX_TESTS
 #error "DJ_TESTER_NB_TESTS exceeds the maximum number of tests allowed in the test set."
@@ -35,6 +35,8 @@
 
 void dj_tester_launch_tests()
 {
+    printf("Starting DJ module tests...\n");
+
     // Initialize the test set
     dj_test_set_t test_set;
     dj_test_set_init(&test_set);

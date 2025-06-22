@@ -399,12 +399,12 @@ void dj_obstacle_import_default_obstacles()
                 true);            // Obstacle enabled
     */
 
-    dj_importer_dynamic_init(DYNAMIC_OBSTACLE_ADV_ROBOT,
-                             (dj_polygon_t *)&DJ_CREATE_POLYGON({-ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE},
-                                                                {-ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
-                                                                {ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
-                                                                {ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE}),
-                             true);
+    // dj_importer_dynamic_init(DYNAMIC_OBSTACLE_ADV_ROBOT,
+    //                          (dj_polygon_t *)&DJ_CREATE_POLYGON({-ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE},
+    //                                                             {-ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
+    //                                                             {ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
+    //                                                             {ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE}),
+    //                          true);
 }
 
 void dj_obstacle_importer_deinit()

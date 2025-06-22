@@ -22,7 +22,7 @@
  * This macro defines the maximum number of tests that can be included in a test set.
  * It is used to allocate memory and manage the test set.
  */
-#define DJ_TEST_SET_MAX_TESTS (50)
+#define DJ_TEST_SET_MAX_TESTS (200)
 
 /* ************************************************** Public types definition ******************************************** */
 

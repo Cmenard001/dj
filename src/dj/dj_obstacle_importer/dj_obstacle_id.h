@@ -83,7 +83,7 @@ typedef enum
     // Ajoute ici les obstacles dynamiques :
     //	Exemple :
     //	DYNAMIC_OBSTACLE_EXEMPLE,
-    DYNAMIC_OBSTACLE_ADV_ROBOT,
+    // DYNAMIC_OBSTACLE_ADV_ROBOT,
 
     /**
      * @brief Nombre d'obstacles dynamiques importÃ©s statiquement
