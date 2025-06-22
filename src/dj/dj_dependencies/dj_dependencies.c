@@ -10,6 +10,7 @@
 /* ******************************************************* Includes ****************************************************** */
 
 #include "dj_dependencies.h"
+#include "pos_simulator/pos_simulator.h"
 
 /* **************************************************** Private macros *************************************************** */
 
@@ -25,9 +26,8 @@
 
 void dj_dep_get_robot_position(GEOMETRY_point_t *robot_position)
 {
-    // Fictive values
-    robot_position->x = 0;
-    robot_position->y = 0;
+    // Get the position from the simulator
+    *robot_position = pos_simulator_get_position();
 }
 
 void dj_dep_get_robot_speed(GEOMETRY_vector_t *robot_speed)

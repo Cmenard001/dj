@@ -11,6 +11,7 @@ set(SRC_PREFIX src)
 
 add_sources(
     main.c
+
     dj/dj_dependencies/QS_maths/QS_maths_angle.c
     dj/dj_dependencies/QS_maths/QS_maths_circle.c
     dj/dj_dependencies/QS_maths/QS_maths_cluster.c
@@ -45,7 +46,31 @@ add_sources(
     dj/dj_solver/dj_solver.c
     dj/dj_viewer/dj_viewer_status.c
     dj/dj.c
+
+    dj_tester/dj_test/dj_test.c
+    dj_tester/dj_test_params/dj_test_params.c
+    dj_tester/dj_test_report/dj_test_report.c
+    dj_tester/dj_test_set/dj_test_set.c
+    dj_tester/dj_tester.c
+
+    point_generator/point_generator.c
+
+    pos_simulator/pos_simulator.c
     )
+
+# Specific windows source files
+if(WIN32)
+    add_sources(
+        api/time/timeWindows.c
+        )
+endif()
+
+# Specific linux source files
+if(UNIX)
+    add_sources(
+        api/time/timeLinux.c
+        )
+endif()
 
 
 # Print the sources and include directories
