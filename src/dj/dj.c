@@ -3,7 +3,7 @@
  * @brief Dj is an algorithm that allows the robot to move from point A to point B while
  * avoiding static and dynamic obstacles
  * @note This file must be overriden by the user with the correct interface
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj.h
  */

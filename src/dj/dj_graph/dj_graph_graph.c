@@ -1,7 +1,7 @@
 /**
  * @file dj_graph_graph.c
  * @brief dj graph used in the pathfinding algorithm
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_graph_graph.h
  */

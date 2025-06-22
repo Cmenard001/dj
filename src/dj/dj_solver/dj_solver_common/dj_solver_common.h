@@ -1,7 +1,7 @@
 /**
  * @file dj_solver_common.h
  * @brief Common files for the dj solvers
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 23/03/2025
  * @see dj_solver_common.c
  */

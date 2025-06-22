@@ -1,7 +1,7 @@
 /**
  * @file dj_graph_builder.h
  * @brief Graph builder is used to build the graph from the obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_graph_builder.h
  */

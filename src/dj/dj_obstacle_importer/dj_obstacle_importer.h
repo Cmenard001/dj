@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_importer.h
  * @brief Importer of dj obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obsacle_importer.c
  */

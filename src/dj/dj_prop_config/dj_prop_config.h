@@ -1,11 +1,11 @@
 /**
  * @file dj_prop_config.h
  * @brief Configuration de dj avec les coefficients de propulsion
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_prop_config.c
  *
- * @todo Lier les macros de dj_prop_config.h avec celles de prop.h pour Ã©viter la redondance
+ * @todo Lier les macros de dj_prop_config.h avec celles de prop.h pour éviter la redondance
  */
 
 #ifndef __DJ_PROP_CONFIG_H__
@@ -21,13 +21,13 @@
 
 /**
  * @brief Angle minimum pour que la prop choississe de tourner en rotation pure
- * @todo Lier cette macro avec celle en prop pour Ã©viter la redondance
+ * @todo Lier cette macro avec celle en prop pour éviter la redondance
  */
 #define MIN_ANGLE_PRE_ROTATION_IMMOBILE_RAD (PI4096 / 5)
 
 /**
- * @brief Lorsqu'on rÃ©soud la position d'un obstacle dynamique dans l'espace temps
- * on doit tolÃ©rer une certaine marge d'erreur Ã  cause de l'approximation d'un polygon Ã  son point central
+ * @brief Lorsqu'on résoud la position d'un obstacle dynamique dans l'espace temps
+ * on doit tolérer une certaine marge d'erreur à cause de l'approximation d'un polygon à son point central
  */
 #define MIN_ANGLE_PRE_ROTATION_TOLERANCE_RAD PI4096 / 10
 
@@ -38,24 +38,24 @@
 #define MAX_ANGLE_TO_NOT_DO_PRE_ROTATION (MIN_ANGLE_PRE_ROTATION_IMMOBILE_RAD + MIN_ANGLE_PRE_ROTATION_TOLERANCE_RAD)
 
 /**
- * @brief AccÃ©lÃ©ration angulaire maximale de la propulsion
- * @note UnitÃ© : PI4096/s^2
- * @note En prop, l'accÃ©lÃ©ration angulaire est en float(rad/s^2), en strat elle est en entier (PI4096/s^2)
- * @todo Lier cette macro avec celle en prop pour Ã©viter la redondance
+ * @brief Accélération angulaire maximale de la propulsion
+ * @note Unité : PI4096/s^2
+ * @note En prop, l'accélération angulaire est en float(rad/s^2), en strat elle est en entier (PI4096/s^2)
+ * @todo Lier cette macro avec celle en prop pour éviter la redondance
  */
 #define PROP_ANGULAR_ACCELERATION ((int32_t)(4 * 4096))
 
 /**
- * @brief AccÃ©lÃ©ration linÃ©aire maximale de la propulsion
- * @note UnitÃ© : mm/s^2
- * @todo Lier cette macro avec celle en prop pour Ã©viter la redondance
+ * @brief Accélération linéaire maximale de la propulsion
+ * @note Unité : mm/s^2
+ * @todo Lier cette macro avec celle en prop pour éviter la redondance
  */
 #define PROP_LINEAR_ACCELERATION ((int32_t)(400))
 
 /**
- * @brief DÃ©cÃ©lÃ©ration linÃ©aire maximale de la propulsion
- * @note UnitÃ© : mm/s^2
- * @todo Lier cette macro avec celle en prop pour Ã©viter la redondance
+ * @brief Décélération linéaire maximale de la propulsion
+ * @note Unité : mm/s^2
+ * @todo Lier cette macro avec celle en prop pour éviter la redondance
  */
 #define PROP_LINEAR_DECELERATION ((int32_t)(400))
 
@@ -64,10 +64,10 @@
 /* *********************************************** Public functions declarations ***************************************** */
 
 /**
- * @brief VÃ©rifie si une rotation prÃ©alable est nÃ©cessaire pour atteindre la cible
+ * @brief Vérifie si une rotation préalable est nécessaire pour atteindre la cible
  *
- * @param angle_diff DiffÃ©rence d'angle entre la trajectoire actuelle et le point cible
- * @return true Si une rotation prÃ©alable est nÃ©cessaire
+ * @param angle_diff Différence d'angle entre la trajectoire actuelle et le point cible
+ * @return true Si une rotation préalable est nécessaire
  * @return false Sinon
  */
 bool is_pre_rotation_needed(int16_t angle_diff);

@@ -1,7 +1,7 @@
 /**
  * @file dj_launcher.h
  * @brief Launcher for the dj path generation
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_launcher.c
  */

@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_manager.h
  * @brief Manager for all obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_manager.c
  */

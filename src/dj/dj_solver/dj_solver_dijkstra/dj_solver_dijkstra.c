@@ -1,7 +1,7 @@
 /**
  * @file dj_solver_dijkstra.c
  * @brief Dj solver using the dijkstra algorithm
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_solver_dijkstra.h
  */

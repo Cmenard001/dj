@@ -1,7 +1,7 @@
 /**
  * @file dj_graph_node.h
  * @brief dj node of graph
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_graph_node.c
  */

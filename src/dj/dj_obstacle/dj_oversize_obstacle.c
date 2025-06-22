@@ -5,7 +5,7 @@
  * User define an obstacle which in all the area of robot mustn't go through.
  * But when we make displacement, we consider the center of the robot.
  * So, we need to oversize the obstacle by half of the robot's width.
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 04/02/2025
  * @see dj_oversize_obstacle.h
  */

@@ -1,7 +1,7 @@
 /**
  * @file dj_prebuilt_graph.h
  * @brief Prebuilt graph is a graph that is built before the match and is used to build the graph faster
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_prebuilt_graph.c
  */

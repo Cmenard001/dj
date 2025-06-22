@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_dynamic.h
  * @brief Dynamic obstacles are obstacles that can move in a straight line with a constant acceleration
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_dynamic.c
  */

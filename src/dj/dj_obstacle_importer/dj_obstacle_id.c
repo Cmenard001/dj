@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_id.c
  * @brief Gestion des identifiants des obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_id.h
  */

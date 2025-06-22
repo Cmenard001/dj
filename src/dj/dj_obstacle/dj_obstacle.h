@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle.h
  * @brief Generic obstacle of dj
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle.c
  */

@@ -1,7 +1,7 @@
 /**
  * @file dj_prop_config.h
  * @brief Configuration de dj avec les coefficients de propulsion
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_prop_config.h
  */

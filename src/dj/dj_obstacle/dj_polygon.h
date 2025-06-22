@@ -1,7 +1,7 @@
 /**
  * @file dj_polygon.h
  * @brief Polygon used for dj
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 16/12/2024
  * @see dj_polygon.c
  */

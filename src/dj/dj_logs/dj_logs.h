@@ -1,7 +1,7 @@
 /**
  * @file dj_logs.h
  * @brief Manage the logs of dj
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  */
 

@@ -1,7 +1,7 @@
 /**
  * @file dj_config.h
  * @brief Configuration du module DJ
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 26/03/2025
  * @see dj_config.c
  */

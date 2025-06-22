@@ -3,7 +3,7 @@
  * @brief Dj is an algorithm that allows the robot to move from point A to point B while
  * avoiding static and dynamic obstacles
  * @note This file must be overriden by the user with the correct interface
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj.c
  */
@@ -27,48 +27,48 @@
 
 /**
  * @brief Initialisation de l'algorithme de pathfinding dj
- * @warning Cette fonction doit Ãªtre au dÃ©marrage du robot
+ * @warning Cette fonction doit être au démarrage du robot
  */
 void dj_init();
 
 /**
  * @brief Fonction d'initialisation de dj
- * @warning Cette fonction doit Ãªtre au lancement du match (quand la couleur est connue)
+ * @warning Cette fonction doit être au lancement du match (quand la couleur est connue)
  */
 void dj_init_at_match_launch();
 
 /**
- * @brief Fonction d'initialisation de dj aprÃ¨s que la couleur ai Ã©tÃ© changÃ©e
- * @warning Cette fonction doit Ãªtre appelÃ©e Ã  chaque fois que la couleur est changÃ©e
+ * @brief Fonction d'initialisation de dj après que la couleur ait été changée
+ * @warning Cette fonction doit être appelée à chaque fois que la couleur est changée
  */
 void dj_init_after_color_change();
 
 #if DJ_ROBOT_ESEO_FRAMEWORK
 
 /**
- * @brief Fonction de mise Ã  jour de l'algorithme de pathfinding dj
- * @warning Cette fonction doit Ãªtre dans le main
+ * @brief Fonction de mise à jour de l'algorithme de pathfinding dj
+ * @warning Cette fonction doit être dans le main
  */
 void dj_process_main();
 
 /**
- * @brief RÃ©alise un dÃ©placement en Ã©vitant des obstacles statiques et dynamiques en utilisant l'algorithme dj
- *        avec des paramÃ¨tres personnalisÃ©s
+ * @brief Réalise un déplacement en évitant des obstacles statiques et dynamiques en utilisant l'algorithme dj
+ *        avec des paramètres personnalisés
  *
- * @pre	: la position du robot doit Ãªtre Ã  jour
- * @post   : la pile asser est vidÃ©e
+ * @pre  : la position du robot doit être à jour
+ * @post : la pile asser est vidée
  *
- * @param x,y			CoordonnÃ©e du point cible
- * @param in_progress	Etat en cours
- * @param success_state	Etat Ã  retourner si le dÃ©placement s'est terminÃ© correctement
- * @param fail_state	Etat Ã  retourner si le dÃ©placement ne s'est pas terminÃ© correctement
- * @param speed			Vitesse de croisiÃ¨re du robot
- * @param way			Sens de dÃ©placement
- * @param avoidance		Type d'evitement Ã  faire
- * @param end_condition	Comportement du robot en fin de trajectoire
- * @param retry_without_dynamic_obstacle Si true, le robot essaiera de se dÃ©placer sans tenir compte des obstacles dynamiques
- *        si aucun chemin n'est trouvÃ© avec les obstacles dynamiques.
- * @return le state rentrÃ© en argument correspondant au resultat du dÃ©placement
+ * @param x,y            Coordonnée du point cible
+ * @param in_progress    Etat en cours
+ * @param success_state  Etat à retourner si le déplacement s'est terminé correctement
+ * @param fail_state     Etat à retourner si le déplacement ne s'est pas terminé correctement
+ * @param speed          Vitesse de croisière du robot
+ * @param way            Sens de déplacement
+ * @param avoidance      Type d'évitement à faire
+ * @param end_condition  Comportement du robot en fin de trajectoire
+ * @param retry_without_dynamic_obstacle Si true, le robot essaiera de se déplacer sans tenir compte des obstacles dynamiques
+ *        si aucun chemin n'est trouvé avec les obstacles dynamiques.
+ * @return le state rentré en argument correspondant au résultat du déplacement
  */
 uint8_t dj_try_going_with_params(uint16_t x,
                                  uint16_t y,
@@ -82,21 +82,21 @@ uint8_t dj_try_going_with_params(uint16_t x,
                                  bool retry_without_dynamic_obstacle);
 
 /**
- * @brief RÃ©alise un dÃ©placement en Ã©vitant des obstacles statiques et dynamiques en utilisant l'algorithme dj
+ * @brief Réalise un déplacement en évitant des obstacles statiques et dynamiques en utilisant l'algorithme dj
  *
- * @pre	: la position du robot doit Ãªtre Ã  jour
- * @post   : la pile asser est vidÃ©e
+ * @pre  : la position du robot doit être à jour
+ * @post : la pile asser est vidée
  *
- * @param x,y			CoordonnÃ©e du point cible
- * @param in_progress	Etat en cours
- * @param success_state	Etat Ã  retourner si le dÃ©placement s'est terminÃ© correctement
- * @param fail_state	Etat Ã  retourner si le dÃ©placement ne s'est pas terminÃ© correctement
- * @param speed			Vitesse de croisiÃ¨re du robot
- * @param way			Sens de dÃ©placement
- * @param avoidance		Type d'evitement Ã  faire
- * @param end_condition	Comportement du robot en fin de trajectoire
+ * @param x,y            Coordonnée du point cible
+ * @param in_progress    Etat en cours
+ * @param success_state  Etat à retourner si le déplacement s'est terminé correctement
+ * @param fail_state     Etat à retourner si le déplacement ne s'est pas terminé correctement
+ * @param speed          Vitesse de croisière du robot
+ * @param way            Sens de déplacement
+ * @param avoidance      Type d'évitement à faire
+ * @param end_condition  Comportement du robot en fin de trajectoire
  *
- * @return le state rentrÃ© en argument correspondant au resultat du dÃ©placement
+ * @return le state rentré en argument correspondant au résultat du déplacement
  */
 uint8_t dj_try_going(uint16_t x,
                      uint16_t y,
@@ -111,36 +111,36 @@ uint8_t dj_try_going(uint16_t x,
 #endif /* DJ_ROBOT_ESEO_FRAMEWORK */
 
 /**
- * @brief Fonction pour activer ou dÃ©sactiver un obstacle statique
+ * @brief Fonction pour activer ou désactiver un obstacle statique
  *
- * @param polygon_id ID de l'obstacle Ã  activer ou dÃ©sactiver
- * @param enable true pour activer l'obstacle, false pour le dÃ©sactiver
+ * @param polygon_id ID de l'obstacle à activer ou désactiver
+ * @param enable true pour activer l'obstacle, false pour le désactiver
  */
 void dj_enable_static_polygon(dj_static_obstacle_id_e polygon_id, bool enable);
 
 /**
- * @brief Fonction pour activer ou dÃ©sactiver un obstacle dynamique
+ * @brief Fonction pour activer ou désactiver un obstacle dynamique
  *
- * @param polygon_id ID de l'obstacle Ã  activer ou dÃ©sactiver
- * @param enable true pour activer l'obstacle, false pour le dÃ©sactiver
+ * @param polygon_id ID de l'obstacle à activer ou désactiver
+ * @param enable true pour activer l'obstacle, false pour le désactiver
  */
 void dj_enable_dynamic_polygon(dj_dynamic_obstacle_id_e polygon_id, bool enable);
 
 /**
- * @brief Fonction pour vÃ©rifier si un obstacle statique est activÃ©
+ * @brief Fonction pour vérifier si un obstacle statique est activé
  *
- * @param polygon_id ID de l'obstacle Ã  vÃ©rifier
+ * @param polygon_id ID de l'obstacle à vérifier
  *
- * @return true si l'obstacle est activÃ©, false sinon
+ * @return true si l'obstacle est activé, false sinon
  */
 bool dj_is_static_polygon_enabled(dj_static_obstacle_id_e polygon_id);
 
 /**
- * @brief Fonction pour vÃ©rifier si un obstacle dynamique est activÃ©
+ * @brief Fonction pour vérifier si un obstacle dynamique est activé
  *
- * @param polygon_id ID de l'obstacle Ã  vÃ©rifier
+ * @param polygon_id ID de l'obstacle à vérifier
  *
- * @return true si l'obstacle est activÃ©, false sinon
+ * @return true si l'obstacle est activé, false sinon
  */
 bool dj_is_dynamic_polygon_enabled(dj_dynamic_obstacle_id_e polygon_id);
 

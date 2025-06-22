@@ -1,7 +1,7 @@
 /**
  * @file dj_solver.c
  * @brief Interface of dj solver
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_solver.h
  */

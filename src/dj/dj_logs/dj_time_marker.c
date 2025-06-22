@@ -1,7 +1,7 @@
 /**
  * @file dj_time_marker.c
  * @brief Markers for dj can be used to measure the time taken by different parts of the code
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_time_marker.h
  */

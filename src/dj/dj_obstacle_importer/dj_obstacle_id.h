@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_id.h
  * @brief Gestion des identifiants des obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_id.c
  */
@@ -24,7 +24,7 @@
 /* ************************************************** Public types definition ******************************************** */
 
 /**
- * @brief EnumÃ©ration des identifiants des polygones
+ * @brief Énumération des identifiants des polygones
  */
 typedef enum
 {
@@ -67,16 +67,16 @@ typedef enum
     STATIC_OBSTACLE_PAMI_END_TRAJECTORY_AREA,
 
     /**
-     * @brief Nombre d'obstacles statiques importÃ©s statiquement
+     * @brief Nombre d'obstacles statiques importés statiquement
      * @warning Dans la plupart des cas, ne pas utiliser cette valeur
-     * car il peut y avoir des obstacles statiques importÃ©s dynamiquement
+     * car il peut y avoir des obstacles statiques importés dynamiquement
      * @see TODO: Mettre le lien vers la documentation de l'import dynamique
      */
     STATIC_OBSTACLE_COUNT,
 } dj_static_obstacle_id_e;
 
 /**
- * @brief EnumÃ©ration des identifiants des obstacles dynamiques
+ * @brief Énumération des identifiants des obstacles dynamiques
  */
 typedef enum
 {
@@ -86,9 +86,9 @@ typedef enum
     // DYNAMIC_OBSTACLE_ADV_ROBOT,
 
     /**
-     * @brief Nombre d'obstacles dynamiques importÃ©s statiquement
+     * @brief Nombre d'obstacles dynamiques importés statiquement
      * @warning Dans la plupart des cas, ne pas utiliser cette valeur
-     * car il peut y avoir des obstacles dynamiques importÃ©s dynamiquement
+     * car il peut y avoir des obstacles dynamiques importés dynamiquement
      * @see TODO: Mettre le lien vers la documentation de l'import dynamique
      */
     DYNAMIC_OBSTACLE_COUNT
@@ -97,34 +97,34 @@ typedef enum
 /* *********************************************** Public functions declarations ***************************************** */
 
 /**
- * @brief Fonction de gÃ©nÃ©ration d'un identifiant d'obstacle statique unique
- * @warning L'identifiant gÃ©nÃ©rÃ© est unique et ne pourra pas Ãªtre relachÃ©.
- * Faites attention Ã  ne pas en gÃ©nÃ©rer trop.
+ * @brief Fonction de génération d'un identifiant d'obstacle statique unique
+ * @warning L'identifiant généré est unique et ne pourra pas être relaché.
+ * Faites attention à ne pas en générer trop.
  *
- * @return dj_static_obstacle_id_e Identifiant d'obstacle statique unique gÃ©nÃ©rÃ©
+ * @return dj_static_obstacle_id_e Identifiant d'obstacle statique unique généré
  */
 dj_static_obstacle_id_e dj_obstacle_id_generate_static_obstacle_id();
 
 /**
- * @brief Fonction de gÃ©nÃ©ration d'un identifiant d'obstacle dynamique unique
- * @warning L'identifiant gÃ©nÃ©rÃ© est unique et ne pourra pas Ãªtre relachÃ©.
- * Faites attention Ã  ne pas en gÃ©nÃ©rer trop.
+ * @brief Fonction de génération d'un identifiant d'obstacle dynamique unique
+ * @warning L'identifiant généré est unique et ne pourra pas être relaché.
+ * Faites attention à ne pas en générer trop.
  *
- * @return dj_dynamic_obstacle_id_e Identifiant d'obstacle dynamique unique gÃ©nÃ©rÃ©
+ * @return dj_dynamic_obstacle_id_e Identifiant d'obstacle dynamique unique généré
  */
 dj_dynamic_obstacle_id_e dj_obstacle_id_generate_dynamic_obstacle_id();
 
 /**
- * @brief Fonction de rÃ©cupÃ©ration du nombre d'obstacles statiques importÃ©s statiquement et dynamiquement
+ * @brief Fonction de récupération du nombre d'obstacles statiques importés statiquement et dynamiquement
  *
- * @return dj_static_obstacle_id_e Nombre d'obstacles statiques importÃ©s
+ * @return dj_static_obstacle_id_e Nombre d'obstacles statiques importés
  */
 dj_static_obstacle_id_e dj_obstacle_id_get_static_obstacle_count();
 
 /**
- * @brief Fonction de rÃ©cupÃ©ration du nombre d'obstacles dynamiques importÃ©s statiquement et dynamiquement
+ * @brief Fonction de récupération du nombre d'obstacles dynamiques importés statiquement et dynamiquement
  *
- * @return dj_dynamic_obstacle_id_e Nombre d'obstacles dynamiques importÃ©s
+ * @return dj_dynamic_obstacle_id_e Nombre d'obstacles dynamiques importés
  */
 dj_dynamic_obstacle_id_e dj_obstacle_id_get_dynamic_obstacle_count();
 

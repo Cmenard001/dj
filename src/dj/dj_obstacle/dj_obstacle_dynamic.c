@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_dynamic.c
  * @brief Dynamic obstacles are obstacles that can move in a straight line with a constant acceleration
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_dynamic.h
  */
@@ -70,8 +70,8 @@ static bool check_solution_validity(GEOMETRY_point_t *solution,
     dj_control_non_null(viewer_status, false);
     dj_control_non_null(solution, false);
 
-    // On vÃ©rifie que la solution est valide du point de vue de la prop
-    // C'est Ã  dire est-ce que la prop aurait choisi de passer par lÃ 
+    // On vérifie que la solution est valide du point de vue de la prop
+    // C'est à dire est-ce que la prop aurait choisi de passer par là
 
     // Calcul de l'angle entre la position du viewer et la solution
 
@@ -118,25 +118,25 @@ static void dj_point_dynamic_get_position(dj_obstacle_dynamic_t *obstacle,
     /*
         Explication des maths qui vont suivre
 
-        Ces maths peuvent Ãªtre retrouvÃ©s dans le README principal de dj
-        Ils seront un peu mieux mis en forme lÃ -bas
+        Ces maths peuvent être retrouvés dans le README principal de dj
+        Ils seront un peu mieux mis en forme là-bas
 
         Rappel :
         Le but est de connaitre la position de l'obstacle dans l'espace temps depuis la position du robot.
-        "Espace temps" : c'est le mÃªme principe que l'espace-temps dans l'espace mais Ã  la vitesse du robot au lieu de la vitesse de la lumiÃ¨re.
-        Donc le but est de connaÃ®tre la ou les (ou aucune) position(s) de l'obstacle si on choisi le(s) meilleur(s) chemin(s) pour l'atteindre.
-        On limite la position d'un obstacle Ã  son centre.
+        "Espace temps" : c'est le même principe que l'espace-temps dans l'espace mais à la vitesse du robot au lieu de la vitesse de la lumière.
+        Donc le but est de connaître la ou les (ou aucune) position(s) de l'obstacle si on choisi le(s) meilleur(s) chemin(s) pour l'atteindre.
+        On limite la position d'un obstacle à son centre.
 
         On pose :
             t = temps absolu
-            tadvi = temps au quel l'obstacle a Ã©tÃ© mis Ã  jour
-            trob = temps au quel se dÃ©roule le dÃ©but de l'observation
+            tadvi = temps au quel l'obstacle a été mis à jour
+            trob = temps au quel se déroule le début de l'observation
 
-            Aadv(x, y) = accÃ©lÃ©ration de l'obstacle
+            Aadv(x, y) = accélération de l'obstacle
             Vadvi(x, y) = vitesse initiale de l'obstacle
             Padvi(x, y) = position initiale de l'obstacle
 
-            Arob = accÃ©lÃ©ration du robot
+            Arob = accélération du robot
             Vrobi = vitesse initiale du robot
             Probi = position initiale du robot
 
@@ -164,7 +164,7 @@ static void dj_point_dynamic_get_position(dj_obstacle_dynamic_t *obstacle,
         <=> (Padvix + Vadvix * (t - tadv) + 1/2 * Aadvx * (t - tadv)^2 - Probix)^2 + (Padviy + Vadviy * (t - tadv) + 1/2 * Aadvx * (t - tadv)^2 - Probiy)^2 = (Vrobi * (t - trob) + 1/2 * Arob * (t - trob)^2)^2
         <=> 0 = (Padvix + Vadvix * (t - tadv) + 1/2 * Aadvx * (t - tadv)^2 - Probix)^2 + (Padviy + Vadviy * (t - tadv) + 1/2 * Aadvx * (t - tadv)^2 - Probiy)^2 - (Vrobi * (t - trob) + 1/2 * Arob * (t - trob)^2)^2
         <=> 0 = (Aadvx^2/2 - Arob^2/4)*t^4 + (Aadvx*(Vadvix - Aadvx*tadv) + Aadvx*(Vadviy - Aadvx*tadv) - Arob*(Vrobi - Arob*trob))*t^3 + ((Vadvix - Aadvx*tadv)^2 + (Vadviy - Aadvx*tadv)^2 - (Vrobi - Arob*trob)^2 + Aadvx*((Aadvx*tadv^2)/2 - Vadvix*tadv + Padvix - Probix) + Aadvx*((Aadvx*tadv^2)/2 - Vadviy*tadv + Padviy - Probiy) + Arob*(Vrobi*trob - (Arob*trob^2)/2))*t^2 + (2*(Vadvix - Aadvx*tadv)*((Aadvx*tadv^2)/2 - Vadvix*tadv + Padvix - Probix) + 2*(Vadviy - Aadvx*tadv)*((Aadvx*tadv^2)/2 - Vadviy*tadv + Padviy - Probiy) + 2*(Vrobi - Arob*trob)*(Vrobi*trob - (Arob*trob^2)/2))*t + ((Aadvx*tadv^2)/2 - Vadvix*tadv + Padvix - Probix)^2 + ((Aadvx*tadv^2)/2 - Vadviy*tadv + Padviy - Probiy)^2 - (Vrobi*trob - (Arob*trob^2)/2)^2
-        L'Ã©quation est un peu longue mais rÃ©sumons-la :
+        L'équation est un peu longue mais résumons-la :
         Elle est de la forme
             0 = a*t4 + b*t^3 + c*t^2 + d*t + e
         avec
@@ -175,37 +175,37 @@ static void dj_point_dynamic_get_position(dj_obstacle_dynamic_t *obstacle,
             e = ((Aadvx*tadv^2)/2 - Vadvix*tadv + Padvix - Probix)^2 + ((Aadvx*tadv^2)/2 - Vadviy*tadv + Padviy - Probiy)^2 - (Vrobi*trob - (Arob*trob^2)/2)^2
 
 
-        Cette Ã©quation est une Ã©quation du quatriÃ¨me degrÃ©, donc il y a de 0 Ã  4 solutions.
-        Les solutions gÃ©nÃ©rales sont complexes, donc on ne calculera pas la forme gÃ©nÃ©rale
+        Cette équation est une équation du quatrième degré, donc il y a de 0 à 4 solutions.
+        Les solutions générales sont complexes, donc on ne calculera pas la forme générale
         Pour rappel on cherche les racines du polynome a*t^4 + b*t^3 + c*t^2 + d*t + e
-        On a l'avantage de pouvoir limiter les solutions Ã  un intervalle de temps [0, tmax]
-        En effet il n'a aucun sens de chercher une solution nÃ©gative ou supÃ©rieure Ã  tmax
-        De plus, tmax est relativement petit car on ne cherche pas Ã  prÃ©dire la position de l'obstacle dans un futur lointain (imprÃ©cision de la prÃ©diction)
-        Et de tout faÃ§on, n'importe quel robot a traversÃ© le terrain ou changÃ© de direction en quelques secondes seulement
+        On a l'avantage de pouvoir limiter les solutions à un intervalle de temps [0, tmax]
+        En effet il n'a aucun sens de chercher une solution négative ou supérieure à tmax
+        De plus, tmax est relativement petit car on ne cherche pas à prédire la position de l'obstacle dans un futur lointain (imprécision de la prédiction)
+        Et de tout façon, n'importe quel robot a traversé le terrain ou changé de direction en quelques secondes seulement
 
-        On va donc pour tout t dans [0, tmax] calculer la valeur de l'Ã©quation et regarder si elle est de signe opposÃ© Ã  la prÃ©cÃ©dente
+        On va donc pour tout t dans [0, tmax] calculer la valeur de l'équation et regarder si elle est de signe opposé à la précédente
         Si c'est le cas, alors il y a une solution entre t et t-1
 
-        Pour chaque solution, on va calculer la position de l'obstacle Ã  ce temps:
+        Pour chaque solution, on va calculer la position de l'obstacle à ce temps:
             Padvx = Padvix + Vadvix * t + 1/2 * Aadvx * t^2
             Padvy = Padviy + Vadviy * t + 1/2 * Aadvx * t^2
-        Avec t la solution trouvÃ©e
+        Avec t la solution trouvée
 
-        Et voilÃ , on a trouvÃ© aucune/la/les position(s) de l'obstacle dans l'espace temps :)
+        Et voilà, on a trouvé aucune/la/les position(s) de l'obstacle dans l'espace temps :)
     */
 
     float start_time = viewer_status->m_time * 0.001f;
     float end_time = (obstacle->m_update_time + OBSTACLE_LIFETIME_MS) * 0.001f;
-    // Si end_time est infÃ©rieur Ã  start_time, alors on a dÃ©passÃ© le temps max
-    // Il est inutile de continuer, l'obstacle est pÃ©rimÃ©
-    // En effet il est inconcevable de prÃ©dire la position d'un obstacle autant dans le futur
+    // Si end_time est inférieur à start_time, alors on a dépassé le temps max
+    // Il est inutile de continuer, l'obstacle est périmé
+    // En effet il est inconcevable de prédire la position d'un obstacle autant dans le futur
     if (end_time < start_time)
     {
         solution->m_nb_solutions = 0;
         return;
     }
 
-    // Conversion des variables en unitÃ©es SI (s, m, m/s, m/sÂ²)
+    // Conversion des variables en unités SI (s, m, m/s, m/s²)
 
     float tadvi = obstacle->m_update_time * 0.001f;
     float trob = viewer_status->m_time * 0.001f;
@@ -235,24 +235,24 @@ static void dj_point_dynamic_get_position(dj_obstacle_dynamic_t *obstacle,
                 + (SQUARE(Aadvx * tadvi) / 2 - Vadviy * tadvi + Padviy - Probiy) - SQUARE(Vrobi * trob - Arob * trob);
 
     solution->m_nb_solutions = 0;
-    // start_sign = true si le signe de l'Ã©quation est positif
-    // On commence Ã  t = 0, donc le signe dÃ©pend uniquement de e
+    // start_sign = true si le signe de l'équation est positif
+    // On commence à t = 0, donc le signe dépend uniquement de e
     bool sign = (l_e > 0) ? true : false;
     for (float t = start_time; t < end_time; t += BRUTE_FORCE_STEP)
     {
         bool new_sign = (l_a * t * t * t * t + l_b * t * t * t + l_c * t * t + l_d * t + l_e > 0) ? true : false;
         if (new_sign != sign)
         {
-            // On a trouvÃ© une solution
+            // On a trouvé une solution
             sign = new_sign;
-            // Calcul de la position de l'obstacle Ã  ce temps
-            // (On prend soin de re-convertir les unitÃ©es en mm)
+            // Calcul de la position de l'obstacle à ce temps
+            // (On prend soin de re-convertir les unités en mm)
             solution->m_solutions[solution->m_nb_solutions]
                 = (GEOMETRY_point_t){.x = (Padvix + Vadvix * t + Aadvx * SQUARE(t) / 2) * 1000,
                                      .y = (Padviy + Vadviy * t + Aadvy * SQUARE(t) / 2) * 1000};
             if (solution->m_nb_solutions >= 3)
             {
-                // On a trouvÃ© toutes les solutions
+                // On a trouvé toutes les solutions
                 break;
             }
             solution->m_nb_solutions++;
@@ -341,9 +341,9 @@ void dj_obstacle_dynamic_get_position(dj_obstacle_dynamic_t *obstacle,
     dj_control_non_null(viewer_status, );
     dj_control_non_null(solution, );
 
-    // Si la vitesse et l'accÃ©lÃ©ration sont nulles alors la et l'unique solution est la position initiale du polygone.
-    // C'est plus un workaround qu'autre chose car les maths qui sont sensÃ©es faire Ã§a ne semble pas fonctionner correctement.
-    // C'est pas trÃ¨s grave car Ã  ce jour (12/05/2025), les obstacles dynamiques n'ont pas de vitesse ni d'accÃ©lÃ©ration.
+    // Si la vitesse et l'accélération sont nulles alors la et l'unique solution est la position initiale du polygone.
+    // C'est plus un workaround qu'autre chose car les maths qui sont sensées faire ça ne semble pas fonctionner correctement.
+    // C'est pas très grave car à ce jour (12/05/2025), les obstacles dynamiques n'ont pas de vitesse ni d'accélération.
     if (obstacle->m_initial_speed.x == 0 && obstacle->m_initial_speed.y == 0 && obstacle->m_acceleration.x == 0
         && obstacle->m_acceleration.y == 0)
     {

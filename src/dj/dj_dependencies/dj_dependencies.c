@@ -2,7 +2,7 @@
  * @file dj_dependencies.c
  * @brief Useful file to centralize dependency includes and simplify the codebase
  * @note This file must be overriden by the user with the correct dependencies
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 25/03/2025
  * @see dj_dependencies.h
  */

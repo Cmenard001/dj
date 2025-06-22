@@ -3,10 +3,10 @@
  *  Game Hoover, Phoboss, Archi-Tech', PACMAN
  *
  *  Fichier : QS_macro.h
- *  Package : QualitÃ© Soft
- *  Description : DÃ©finition de macros pour tout code du robot
+ *  Package : Qualité Soft
+ *  Description : Définition de macros pour tout code du robot
  *  Auteur : Axel Voitier (et un peu savon aussi)
- *	RÃ©vision 2008-2009 : Jacen
+ *	Révision 2008-2009 : Jacen
  *	Licence : CeCILL-C (voir LICENCE.txt)
  *  Version 20100415
  */
@@ -40,7 +40,7 @@
 #define POWER3(x) ((x) * (x) * (x))
 #define MODULO(x, N)                                                                                                        \
     ((x % N + N)                                                                                                            \
-     % N) //vrai modulo, avec un ré³µltat non signé® Car l'opé²¡teur % renvoit le reste signé ¤e la division entiè²¥.
+     % N) //vrai modulo, avec un résultat non signé. Car l'opérateur % renvoit le reste signé de la division entière.
 
 #define nop() __asm__("nop")
 /* la fonction valeur absolue pour des entiers */
@@ -75,7 +75,7 @@
 #define RAD_TO_PI4096(x) ((x)*PI4096 / M_PI)
 #define PI4096_TO_RAD(x) ((x)*0.000244140625f)
 
-//Gestion des gros tableau, il faut changer PSVPAG avec PSV_adjust(tableau) pour Ãªtre compatible avec d'autre micropro (genre stm32)
+//Gestion des gros tableau, il faut changer PSVPAG avec PSV_adjust(tableau) pour être compatible avec d'autre micropro (genre stm32)
 #define _LARGEARRAY
 #define PSV_getCurrent() 0
 #define PSV_setCurrent(newpsvpag) (newpsvpag = newpsvpag)

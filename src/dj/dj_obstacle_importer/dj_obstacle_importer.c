@@ -1,7 +1,7 @@
 /**
  * @file dj_obstacle_importer.h
  * @brief Importer of dj obstacles
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obsacle_importer.h
  */
@@ -220,9 +220,9 @@ void dj_obstacle_import_default_obstacles()
     /*
         Initialisation des obstacles statiques
         Attention :
-            L'ordre des points est important pour former un polygone fermÃ©
+            L'ordre des points est important pour former un polygone fermé
 
-        Exemple d'initialisation d'un obstacle statique en forme de carrÃ© de 100mm de cÃ´tÃ© en (0, 0)
+        Exemple d'initialisation d'un obstacle statique en forme de carré de 100mm de côté en (0, 0)
         dj_importer_static_init(STATIC_OBSTACLE_EXEMPLE,
                 &DJ_CREATE_POLYGON(
                     {0   , COLOR_Y(0  )},     // Points 1 of the polygon
@@ -385,11 +385,11 @@ void dj_obstacle_import_default_obstacles()
     /*
         Initialisation des obstacles dynamiques
         Attention :
-            L'ordre des points est important pour former un polygone fermÃ©
-            !!! Le polygon doit Ãªtre centrÃ© sur le point (0, 0) au mieux en (0, 0) !!!
-            (Ã§a ne fonctionnera pas du tout sinon)
+            L'ordre des points est important pour former un polygone fermé
+            !!! Le polygon doit être centré sur le point (0, 0) au mieux en (0, 0) !!!
+            (ça ne fonctionnera pas du tout sinon)
 
-        Exemple d'initialisation d'un obstacle dynamique en forme de carrÃ© de 100mm de cÃ´tÃ©
+        Exemple d'initialisation d'un obstacle dynamique en forme de carré de 100mm de côté
         dj_importer_dynamic_init(DYNAMIC_OBSTACLE_EXEMPLE,
                 &DJ_CREATE_POLYGON(
                     {-50, -50},   // Points 1 of the polygon

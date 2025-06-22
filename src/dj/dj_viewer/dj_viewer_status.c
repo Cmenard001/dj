@@ -1,7 +1,7 @@
 /**
  * @file dj_viewer_status.h
  * @brief A viewer status is an state of the robot during the dj solver algorithm
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_viewer_status.h
  */

@@ -2,7 +2,7 @@
  * @file dj_graph_rebuilder.c
  * @brief Rebuilder is used to rebuild the graph when the viewer moves
  * @see dj_graph_builder.c
- * @author Cyprien MÃ©nard
+ * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_graph_rebuilder.h
  */
