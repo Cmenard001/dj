@@ -324,4 +324,4 @@ Les tâches à effectuer pour améliorer DJ :
 - [ ] Prendre en compte la pré-rotation du robot avant la première translation.
 - [ ] Prendre en compte le dernier déplacement en fonction de son type (`END_AT_BRAKE` ou `END_AT_LAST_POINT`).
 - [ ] Implémenter une interaction avec le système de propulsion pour demander les coefficients de propulsion et éviter la redondance de code. Cela permettrait également de gérer les changements d'accélération pendant le match.
-- [ ] Implémenter le solver utilisant A*.
+- [ ] Fixer [ce bug](.\dj_obstacle\dj_obstacle_dynamic.c).
