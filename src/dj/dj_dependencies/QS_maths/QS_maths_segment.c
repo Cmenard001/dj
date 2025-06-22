@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <stddef.h>
 
 bool GEOMETRY_segments_get_intersection(GEOMETRY_segment_t s1, GEOMETRY_segment_t s2, GEOMETRY_point_t *intersection)
 {

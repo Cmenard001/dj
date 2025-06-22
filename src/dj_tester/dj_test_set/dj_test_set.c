@@ -85,7 +85,7 @@ void dj_test_get_report(dj_test_set_t *test_set, dj_test_report_t *report)
     char l_result[DJ_TEST_REPORT_MAX_LENGTH];
     snprintf(l_result,
              DJ_TEST_REPORT_MAX_LENGTH,
-             "Test Set Report: %d tests executed\nDone in %d ms. Success rate : %d/%d\n",
+             "Test Set Report: %d tests executed\nDone in %ld ms. Success rate : %d/%d\n",
              test_set->m_num_tests,
              dj_test_set_get_duration(test_set),
              dj_test_set_get_success_count(test_set),

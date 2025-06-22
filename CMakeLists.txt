@@ -85,3 +85,10 @@ add_include_dirs(
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
+
+####################################################################################################
+# Link libraries
+####################################################################################################
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    m
+)
