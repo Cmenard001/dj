@@ -1,0 +1,64 @@
+{
+	"C_Header": {
+		"prefix": "C Header 125 characters no public variables",
+		"body": [
+			"/**",
+			" * @file ${TM_FILENAME}",
+			" * @brief ${1:Description du fichier}",
+			" * @author ${2:Cyprien Ménard}",
+			" * @date ${CURRENT_DATE}/${CURRENT_MONTH}/${CURRENT_YEAR}",
+			" * @see ${TM_FILENAME_BASE}.c",
+			" */",
+			"",
+			"#ifndef __${TM_FILENAME_BASE/(.*)/${1:/upcase}/}_H__",
+			"#define __${TM_FILENAME_BASE/(.*)/${1:/upcase}/}_H__",
+			"",
+			"/* ******************************************************* Includes ****************************************************** */",
+			"",
+			"/* ***************************************************** Public macros *************************************************** */",
+			"",
+			"/* ************************************************** Public types definition ******************************************** */",
+			"",
+			"/* *********************************************** Public functions declarations ***************************************** */",
+			"",
+			"/* ******************************************* Public callback functions declarations ************************************ */",
+			"",
+			"#endif /* __${TM_FILENAME_BASE/(.*)/${1:/upcase}/}_H__ */"
+		],
+		"description": "Header file template for C language with a 125 characters max line length and no public variables"
+	},
+	"C_Source": {
+		"prefix": "C Source 125 characters no public variables",
+		"body": [
+			"/**",
+			" * @file ${TM_FILENAME}",
+			" * @brief ${1:Description du fichier}",
+			" * @author ${2:Cyprien Ménard}",
+			" * @date ${CURRENT_DATE}/${CURRENT_MONTH}/${CURRENT_YEAR}",
+			" * @see ${TM_FILENAME_BASE}.h",
+			" */",
+			"",
+			"/* ******************************************************* Includes ****************************************************** */",
+			"#include \"${TM_FILENAME_BASE}.h\"",
+			"",
+			"/* **************************************************** Private macros *************************************************** */",
+			"",
+			"/* ************************************************ Private type definition ********************************************** */",
+			"",
+			"/* ********************************************* Private functions declarations ****************************************** */",
+			"",
+			"/* ************************************************** Private variables ************************************************** */",
+			"",
+			"/* ********************************************** Private functions definitions ****************************************** */",
+			"",
+			"/* ********************************************** Public functions definitions ******************************************* */",
+			"",
+			"/* ***************************************** Public callback functions definitions *************************************** */"
+		],
+		"description": "Source file template for C language with a 125 characters max line length and no public variables"
+	},
+	"Doxygen comment line": {
+		"prefix": "Doxygen comment line",
+		"body": "/**< ${1:Description} */",
+	}
+}
