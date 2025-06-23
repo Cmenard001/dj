@@ -1,0 +1,45 @@
+{
+    "version": 4,
+    "configurePresets": [
+        {
+            "name": "default_preset",
+            "hidden": true,
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "debug_preset",
+            "inherits": "default_preset",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows_preset",
+            "inherits": "debug_preset",
+            "cacheVariables": {
+                "TARGET_NAME": "windows",
+                "SPECIFIC_CMAKE_PATH": "cmake/targets/windows.cmake"
+            }
+        },
+        {
+            "name": "linux_preset",
+            "inherits": "debug_preset",
+            "cacheVariables": {
+                "TARGET_NAME": "linux",
+                "SPECIFIC_CMAKE_PATH": "cmake/targets/linux.cmake"
+            }
+        },
+        {
+            "name": "stm32f4_preset",
+            "inherits": "debug_preset",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "/home/cmenard/robot/dj/cmake/GNU-ARM-Toolchain.cmake",
+                "TARGET_NAME": "stm32f4",
+                "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32f4.cmake"
+            }
+        }
+    ]
+}

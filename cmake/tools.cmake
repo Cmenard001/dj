@@ -1,5 +1,7 @@
 ## Functions and macros to help with the CMake files
 
+set(SRC_PREFIX src)
+
 # Macro to add some sources files to the list of sources (SRCS)
 # Don't forget to set the SRC_PREFIX variable before using this macro
 # if SRCS is not defined, it will be created with a global scope
