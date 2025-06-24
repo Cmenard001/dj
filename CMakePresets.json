@@ -4,6 +4,7 @@
         {
             "name": "default_preset",
             "hidden": true,
+            "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
@@ -35,7 +36,7 @@
             "name": "stm32f4_preset",
             "inherits": "debug_preset",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "/home/cmenard/robot/dj/cmake/GNU-ARM-Toolchain.cmake",
+                "CMAKE_TOOLCHAIN_FILE": "cmake/GNU-ARM-Toolchain.cmake",
                 "TARGET_NAME": "stm32f4",
                 "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32f4.cmake"
             }
