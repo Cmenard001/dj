@@ -36,6 +36,8 @@ Certains fichiers sont la propriété du club de robotique de l'ESEO. Ils sont s
 ## Contribuer
 Si vous souhaitez contribuer à ce projet, vous pouvez le faire en ouvrant une [issue](https://github.com/Cmenard001/dj/issues) ou en faisant une [pull request](https://github.com/Cmenard001/dj/pulls). Nous acceptons toutes les contributions, qu'elles soient mineures ou majeures.
 
+N'oubliez pas de vous rajouter dans la liste des [contributeurs](#Auteurs) si vous le souhaitez.
+
 ## Auteurs
 - [Cyprien Ménard](https://github.com/Cmenard001)
 - [Robot ESEO](https://robot-eseo.fr)
