@@ -36,9 +36,6 @@ else()
   set(opt_level -Os)
 endif()
 
-# Suppress int/pointer cast warnings
-set(suppress_cast_warnings -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast)
-
 # set some project constants
 set(elf_file ${PROJECT_NAME}.elf)
 set(bin_file ${PROJECT_NAME}.bin)
@@ -52,7 +49,7 @@ add_executable(${elf_file} ${SRCS})
 target_link_libraries(${elf_file} PUBLIC stm32f4xx m)
 
 # set additional for compiler and linker: optimization and generate map file
-set(additional_compiler_flags ${opt_level} ${suppress_cast_warnings})
+set(additional_compiler_flags ${opt_level})
 set(additional_linker_flags -Wl,-Map=${map_file},--cref,--no-warn-mismatch)
 target_compile_options(${elf_file} PRIVATE ${additional_compiler_flags})
 target_link_libraries(${elf_file} PRIVATE ${additional_linker_flags})
