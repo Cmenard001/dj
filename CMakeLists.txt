@@ -1,13 +1,24 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(dj C)
+project(dj C ASM)
+
+message(STATUS "CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
+
+if(NOT TARGET_NAME)
+    message(FATAL_ERROR "TARGET_NAME cache variable is not set. Please use a CMake preset that sets it.")
+endif()
+if(NOT SPECIFIC_CMAKE_PATH)
+    message(FATAL_ERROR "SPECIFIC_CMAKE_PATH cache variable is not set. Please use a CMake preset that sets it.")
+endif()
+
+message(STATUS "TARGET_NAME: ${TARGET_NAME}")
+message(STATUS "SPECIFIC_CMAKE_PATH: ${SPECIFIC_CMAKE_PATH}")
 
 include(cmake/tools.cmake)
 
 ####################################################################################################
 # Common source files for all targets (from src directory)
 ####################################################################################################
-set(SRC_PREFIX src)
 
 add_sources(
     main.c
@@ -58,24 +69,6 @@ add_sources(
     pos_simulator/pos_simulator.c
     )
 
-# Specific windows source files
-if(WIN32)
-    add_sources(
-        api/time/timeWindows.c
-        )
-endif()
-
-# Specific linux source files
-if(UNIX)
-    add_sources(
-        api/time/timeLinux.c
-        )
-endif()
-
-
-# Print the sources and include directories
-print_sources_and_include_dirs()
-
 ####################################################################################################
 # Common include directories for all targets (from src directory)
 ####################################################################################################
@@ -83,12 +76,10 @@ add_include_dirs(
     ${SRC_PREFIX}
     )
 
-add_executable(${PROJECT_NAME} ${SRCS})
+# Specific include directories for the target
+include(${SPECIFIC_CMAKE_PATH})
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
 
-####################################################################################################
-# Link libraries
-####################################################################################################
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    m
-)
+# Print the sources and include directories
+print_sources_and_include_dirs()

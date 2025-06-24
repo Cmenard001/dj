@@ -32,9 +32,12 @@ void dj_test_report_init(dj_test_report_t *report)
 
 bool dj_test_report_add_message(dj_test_report_t *report, const char *message)
 {
-    // Check if the message can fit in the report
-    if (snprintf(report->m_report, DJ_TEST_REPORT_MAX_LENGTH, "%s%s", report->m_report, message) < DJ_TEST_REPORT_MAX_LENGTH)
+    // Use a temporary buffer to avoid aliasing issues
+    char temp[DJ_TEST_REPORT_MAX_LENGTH];
+    int len = snprintf(temp, DJ_TEST_REPORT_MAX_LENGTH, "%s%s", report->m_report, message);
+    if (len < DJ_TEST_REPORT_MAX_LENGTH)
     {
+        strcpy(report->m_report, temp);
         return true; // Message added successfully
     }
     return false; // Message would exceed maximum length

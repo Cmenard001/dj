@@ -17,7 +17,7 @@
 /**
  * @brief Number of tests to be performed by the DJ tester.
  */
-#define DJ_TESTER_NB_TESTS (200)
+#define DJ_TESTER_NB_TESTS (50)
 
 #if DJ_TESTER_NB_TESTS > DJ_TEST_SET_MAX_TESTS
 #error "DJ_TESTER_NB_TESTS exceeds the maximum number of tests allowed in the test set."
