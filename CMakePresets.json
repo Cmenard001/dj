@@ -40,6 +40,15 @@
                 "TARGET_NAME": "stm32f4",
                 "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32f4.cmake"
             }
+        },
+        {
+            "name": "stm32mp15_preset",
+            "inherits": "debug_preset",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "cmake/STM32MP15-Toolchain.cmake",
+                "TARGET_NAME": "stm32mp15",
+                "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32mp15.cmake"
+            }
         }
     ]
 }
