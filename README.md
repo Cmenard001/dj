@@ -21,6 +21,12 @@ Exécutez le programme produit par CMake sur une cible pour évaluer la performa
 ## Cibles supportées
 - Windows
 - Linux
+- Stm32f4 (Seulement testé sur STM32F407VG)
+
+## Résultats
+[HONOR MagicBook 14 - windows](./results/HONOR_MagicBook_14_windows.txt)
+[HONOR MagicBook 14 - wsl2 ubuntu](./results/HONOR_MagicBook_14_wsl2_ubuntu.txt)
+[STM32F407](./results/STM32F407.txt)
 
 ## Licence
 Ce projet est sous licence MIT. Vous pouvez consulter le fichier [LICENSE](./LICENCE.txt) pour plus d'informations.
