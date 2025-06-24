@@ -20,11 +20,6 @@ ssize_t _read(int file, void *ptr, size_t len) {
     return -1;
 }
 
-ssize_t _write(int file, const void *ptr, size_t len) {
-    errno = EBADF;
-    return -1;
-}
-
 int _fstat(int file, struct stat *st) {
     st->st_mode = S_IFCHR;
     return 0;

@@ -27,6 +27,7 @@ add_sources(
     api/stm32f4/system_stm32f4xx.c
     api/time/timeStm32f4.c
     api/stm32f4/syscalls.c
+    api/printf/printfStm32f4.c
     )
 
 # GCC optimization level: use -O0 in debug build, otherwise -O2
