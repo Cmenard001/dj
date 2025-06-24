@@ -14,6 +14,10 @@
 #ifndef QS_MACRO_H
 #define QS_MACRO_H
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define HIGHINT(x) (((x) >> 8) & 0xFF)
 #define LOWINT(x) ((x)&0xFF)
 #define U16FROMU8(high, low) ((((uint16_t)(high)) << 8) | (uint16_t)(low))
