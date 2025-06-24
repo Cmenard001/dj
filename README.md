@@ -40,6 +40,7 @@ N'oubliez pas de vous rajouter dans la liste des [contributeurs](#Auteurs) si vo
 
 ## Auteurs
 - [Cyprien Ménard](https://github.com/Cmenard001)
+- [Dorian Benech](https://github.com/xmow49)
 - [Robot ESEO](https://robot-eseo.fr)
 
 ## Remerciements

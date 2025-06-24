@@ -14,6 +14,52 @@
             },
             "problemMatcher": [],
             "detail": "CMake template build task"
+        },
+        {
+            "label": "stop-gdbserver-remote",
+            "type": "shell",
+            "command": "ssh",
+            "args": [
+                "root@stm32mp1.local",
+                "killall gdbserver || true"
+            ],
+        },
+        {
+            "label": "build-and-deploy",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "scp ${command:cmake.launchTargetPath} root@stm32mp1.local:/home/root/"
+            ],
+            "group": "build",
+            "dependsOn": "stop-gdbserver-remote",
+        },
+        {
+            "label": "start-gdbserver-remote",
+            "type": "shell",
+            "command": "ssh",
+            "args": [
+                "root@stm32mp1.local",
+                "cd /home/root && gdbserver *:1234 ./dj"
+            ],
+            "dependsOn": "build-and-deploy",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "____"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*Process.*created.*$",
+                    "endsPattern": "^.*Listening on port.*$"
+                }
+            },
         }
     ]
 }
