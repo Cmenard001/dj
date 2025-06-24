@@ -43,39 +43,40 @@ set(bin_file ${PROJECT_NAME}.bin)
 set(hex_file ${PROJECT_NAME}.hex)
 set(map_file ${PROJECT_NAME}.map)
 set(lss_file ${PROJECT_NAME}.lss)
+set(PROJECT_NAME ${elf_file})
 
-add_executable(${elf_file} ${SRCS})
+add_executable(${PROJECT_NAME} ${SRCS})
 
 # link StdPeriph library to project
-target_link_libraries(${elf_file} PUBLIC stm32f4xx m)
+target_link_libraries(${PROJECT_NAME} PUBLIC stm32f4xx m)
 
 # set additional for compiler and linker: optimization and generate map file
 set(additional_compiler_flags ${opt_level})
 set(additional_linker_flags -Wl,-Map=${map_file},--cref,--no-warn-mismatch)
-target_compile_options(${elf_file} PRIVATE ${additional_compiler_flags})
-target_link_libraries(${elf_file} PRIVATE ${additional_linker_flags})
+target_compile_options(${PROJECT_NAME} PRIVATE ${additional_compiler_flags})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${additional_linker_flags})
 
 # remove unused sections
-target_link_libraries(${elf_file} PUBLIC "-g -Wl,--gc-sections")
+target_link_libraries(${PROJECT_NAME} PUBLIC "-g -Wl,--gc-sections")
 
 # link with linker file
-target_link_libraries(${elf_file} PUBLIC -T${LINKER_SCRIPT})
+target_link_libraries(${PROJECT_NAME} PUBLIC -T${LINKER_SCRIPT})
 
 # show size of resulting firmware image
-add_custom_target(${elf_file}-size DEPENDS ${elf_file} COMMAND ${ARM_SIZE_EXECUTABLE} -B ${elf_file})
+add_custom_target(${PROJECT_NAME}-size DEPENDS ${PROJECT_NAME} COMMAND ${ARM_SIZE_EXECUTABLE} -B ${PROJECT_NAME})
 
 # generate extended listing
-add_custom_target(${lss_file} DEPENDS ${elf_file} COMMAND ${ARM_OBJDUMP_EXECUTABLE} -S ${elf_file} > ${lss_file})
+add_custom_target(${lss_file} DEPENDS ${PROJECT_NAME} COMMAND ${ARM_OBJDUMP_EXECUTABLE} -S ${PROJECT_NAME} > ${lss_file})
 
 # create binary and hex files
-add_custom_target(${hex_file} DEPENDS ${elf_file} COMMAND ${ARM_OBJCOPY_EXECUTABLE} -Oihex ${elf_file} ${hex_file})
-add_custom_target(${bin_file} DEPENDS ${elf_file} COMMAND ${ARM_OBJCOPY_EXECUTABLE} -Obinary ${elf_file} ${bin_file})
-add_custom_target(${application_name} ALL DEPENDS ${elf_file}-size ${bin_file} ${hex_file} ${lss_file})
+add_custom_target(${hex_file} DEPENDS ${PROJECT_NAME} COMMAND ${ARM_OBJCOPY_EXECUTABLE} -Oihex ${PROJECT_NAME} ${hex_file})
+add_custom_target(${bin_file} DEPENDS ${PROJECT_NAME} COMMAND ${ARM_OBJCOPY_EXECUTABLE} -Obinary ${PROJECT_NAME} ${bin_file})
+add_custom_target(${application_name} ALL DEPENDS ${PROJECT_NAME}-size ${bin_file} ${hex_file} ${lss_file})
 
 # OpenOCD targets
-add_custom_target(flash DEPENDS ${elf_file} COMMAND ${OPENOCD_EXECUTABLE}
+add_custom_target(flash DEPENDS ${PROJECT_NAME} COMMAND ${OPENOCD_EXECUTABLE}
   -f ${OPENOCD_CONFIG}
-  --command "program ${elf_file} reset exit")
+  --command "program ${PROJECT_NAME} reset exit")
 
 # The port that OpenOCD will serve a gdb interface on
 if(NOT GDB_DEBUG_PORT)

@@ -8,3 +8,6 @@ build/
 
 # DJ generated files
 dj_graph.png
+
+# DJ test output
+**/dj_test_report.txt

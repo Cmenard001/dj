@@ -5,23 +5,42 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "robot-current config",
+            "name": "robot-stm32f4",
             "cwd": "${workspaceFolder}",
             "type": "cortex-debug",
             "executable": "${command:cmake.launchTargetPath}",
-            "request": "launch",                // Use "attach" to connect to target w/o elf download
+            "request": "launch",
             "servertype": "stlink",
             "device": "STM32F407VG",
             "interface": "swd",
-            "serialNumber": "",                 // Set ST-Link ID if you use multiple at the same time
+            "serialNumber": "",
             "liveWatch": {
-                "enabled": false,      // Enable live variable watch
+                "enabled": false,
                 "samplesPerSecond": 4
             },
             "stm32cubeprogrammer": "/opt/st/stm32cubeclt_1.17.0/STM32CubeProgrammer/bin",
-            "svdFile": "STM32F407.svd",      // Path to SVD file to see registers, easy to find with "everything" search engine
+            "svdFile": "STM32F407.svd",
             "v1": false,
             "showDevDebugOutput": "parsed",
+        },
+        {
+            "name": "robot-linux",
+            "cwd": "${workspaceFolder}",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "stopAtEntry": false,
+            "MIMode": "gdb",
+        },
+        {
+            "name": "robot-windows",
+            "cwd": "${workspaceFolder}",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "stopAtEntry": false,
         }
     ]
 }

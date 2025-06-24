@@ -69,9 +69,6 @@ add_sources(
     pos_simulator/pos_simulator.c
     )
 
-# Print the sources and include directories
-print_sources_and_include_dirs()
-
 ####################################################################################################
 # Common include directories for all targets (from src directory)
 ####################################################################################################
@@ -79,15 +76,10 @@ add_include_dirs(
     ${SRC_PREFIX}
     )
 
+# Specific include directories for the target
 include(${SPECIFIC_CMAKE_PATH})
 
-target_include_directories(${PROJECT_NAME}.elf PRIVATE ${INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
 
-####################################################################################################
-# Link libraries
-####################################################################################################
-# The math library 'm' is a system library and should be linked, not added as a library target.
-
-target_link_libraries(${PROJECT_NAME}.elf PRIVATE
-    ${LINK_LIBRARIES}
-)
+# Print the sources and include directories
+print_sources_and_include_dirs()
