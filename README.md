@@ -29,6 +29,7 @@ Exécutez le programme produit par CMake sur une cible pour évaluer la performa
 - [HONOR MagicBook 14 - wsl2 ubuntu](./results/HONOR_MagicBook_14_wsl2_ubuntu.txt)
 - [STM32F407](./results/STM32F407.txt)
 - [STM32MP157C-DK2](./results/STM32MP157C-DK2.txt)
+- [NVIDIA Jetson Orin Nano Super](./results\Nvidia_Jetson_Orin_Nano_Super.txt)
 
 ## Licence
 Ce projet est sous licence MIT. Vous pouvez consulter le fichier [LICENSE](./LICENCE.txt) pour plus d'informations.
