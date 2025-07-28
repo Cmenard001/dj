@@ -1,0 +1,3 @@
+Starting DJ module tests...
+Test Set Report: 50 tests executed
+Done in 99 ms. Success rate : 50/50
