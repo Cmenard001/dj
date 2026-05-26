@@ -30,7 +30,10 @@
                 // Python scripts support
                 "ms-python.python",
                 // Hex file viewer (useful for firmware)
-                "ms-vscode.hexeditor"
+                "ms-vscode.hexeditor",
+                // Git integration
+                "eamodio.gitlens",
+                "mhutchie.git-graph"
             ],
             "settings": {
                 "cmake.configureOnOpen": true,
