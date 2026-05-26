@@ -1,0 +1,48 @@
+{
+    "name": "dj Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    // Forward SSH agent so remote deployment (scp/ssh to stm32mp1.local) works
+    "remoteEnv": {
+        "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
+    },
+    "mounts": [
+        // Persist CMake build cache between container rebuilds
+        "source=dj-cmake-build,target=/workspace/build,type=volume",
+        // Mount SSH config + known_hosts for remote deployment
+        "source=${localEnv:HOME}/.ssh,target=/home/dev/.ssh,type=bind,readonly"
+    ],
+    // VS Code extensions installed inside the container
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // C/C++ language support & IntelliSense
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                // CMake integration
+                "ms-vscode.cmake-tools",
+                // ARM Cortex-M / STM32 debugging (cortex-debug)
+                "marus25.cortex-debug",
+                // Python scripts support
+                "ms-python.python",
+                // Hex file viewer (useful for firmware)
+                "ms-vscode.hexeditor"
+            ],
+            "settings": {
+                "cmake.configureOnOpen": true,
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "cmake.preferredGenerators": [
+                    "Ninja"
+                ],
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+            }
+        }
+    },
+    // Select the linux preset by default; switch via the CMake Tools status bar
+    "postCreateCommand": "cmake --preset linux_preset -S /workspace -B /workspace/build/linux || true",
+    "remoteUser": "dev"
+}
