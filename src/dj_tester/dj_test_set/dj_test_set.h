@@ -99,6 +99,14 @@ uint32_t dj_test_set_get_success_count(dj_test_set_t *test_set);
  */
 void dj_test_get_report(dj_test_set_t *test_set, dj_test_report_t *report);
 
+/**
+ * @brief Get the total CPU time consumed by all tests in a DJ test set
+ *
+ * @param test_set Pointer to the test set
+ * @return Total CPU time in microseconds
+ */
+time_us_t dj_test_set_get_cpu_duration(dj_test_set_t *test_set);
+
 /* ******************************************* Public callback functions declarations ************************************ */
 
 #endif /* __DJ_TEST_SET_H__ */

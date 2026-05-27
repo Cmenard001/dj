@@ -6,10 +6,14 @@
  * @see timeLinux.h
  */
 
+/* Enable POSIX features (struct timespec, clock_gettime) */
+#define _POSIX_C_SOURCE 199309L
+
 /* ******************************************************* Includes ****************************************************** */
 #include "time.h"
 
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 /* **************************************************** Private macros *************************************************** */
@@ -41,6 +45,13 @@ time_ms_t time_ms()
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (time_ms_t)(tv.tv_sec * 1000 + tv.tv_usec / 1000);
+}
+
+time_us_t time_cpu_us()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+    return (time_us_t)(ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
 }
 
 /* ***************************************** Public callback functions definitions *************************************** */

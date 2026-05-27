@@ -38,6 +38,12 @@ time_ms_t time_ms()
     return GetTickCount();
 }
 
+time_us_t time_cpu_us()
+{
+    /* No per-process CPU time API without QueryProcessCycleTime; fallback to wall time */
+    return time_us();
+}
+
 /* ******************************************* Public callback functions declarations ************************************ */
 
 #endif /* __TIMEWINDOWS_H__ */

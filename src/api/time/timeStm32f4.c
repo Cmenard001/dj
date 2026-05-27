@@ -45,4 +45,10 @@ time_ms_t time_ms()
     return (time_ms_t)(DWT->CYCCNT / (SystemCoreClock / 1000UL));
 }
 
+time_us_t time_cpu_us()
+{
+    /* On bare-metal there is no preemption concept; use the same wall time */
+    return time_us();
+}
+
 /* ***************************************** Public callback functions definitions *************************************** */

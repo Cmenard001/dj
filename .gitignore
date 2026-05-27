@@ -11,3 +11,14 @@ dj_graph.png
 
 # DJ test output
 **/dj_test_report.txt
+
+# CMake-generated symlinks (cross-platform include resolution)
+src/utils/dj
+src/utils/maths
+src/utils/macros
+src/utils/time
+src/utils/lists
+src/utils/shape
+src/system
+src/propulsion
+src/hmi
