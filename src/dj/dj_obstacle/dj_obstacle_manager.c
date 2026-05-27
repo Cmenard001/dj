@@ -4,17 +4,21 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_manager.h
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
 
 #include "dj_obstacle_manager.h"
-#include "../dj_logs/dj_logs.h"
-#include "../dj_logs/dj_time_marker.h"
-#include "../dj_obstacle_importer/dj_obstacle_id.h"
-#include "../dj_obstacle_importer/dj_obstacle_importer.h"
-
+#include "system/assert/system_assert.h"
+#include "system/log/log.h"
+#include "utils/dj/dj_logs/dj_time_marker.h"
+#include "utils/dj/dj_obstacle_importer/dj_obstacle_id.h"
+#include "utils/dj/dj_obstacle_importer/dj_obstacle_importer.h"
 #include <stdlib.h>
+
+LOG_REGISTER("utils/dj/obstacle_manager");
 
 /* **************************************************** Private macros *************************************************** */
 
@@ -22,11 +26,11 @@
 
 /* ********************************************* Private functions declarations ****************************************** */
 
-MAGIC_ARRAY_SRC(static_obstacles_list, dj_obstacle_static_t);
-
 static void compute_dynamic_obstacles(dj_obstacle_manager_t *manager, dj_viewer_status_t *viewer);
 
 /* ************************************************** Private variables ************************************************** */
+
+/* ********************************************** Private functions definitions ****************************************** */
 
 /**
  * @brief Compute the dynamic obstacles to get the static obstacles in space time (so from the point of view of a viewer)
@@ -37,162 +41,185 @@ static void compute_dynamic_obstacles(dj_obstacle_manager_t *manager, dj_viewer_
  */
 static void compute_dynamic_obstacles(dj_obstacle_manager_t *manager, dj_viewer_status_t *viewer)
 {
-    dj_control_non_null(manager, )
-        // Check if the same as the last computed viewer or if the viewer is NULL
-        // Viewer NULL --> no viewer, so no dynamic obstacles
-        if (viewer == NULL)
+    SYSTEM_ASSERT(manager != NULL);
+    // Check if the same as the last computed viewer or if the viewer is NULL
+    // Viewer NULL --> no viewer, so no dynamic obstacles
+    if (viewer == NULL)
     {
         return;
     }
-    if (viewer->m_time == manager->m_last_computed_viewer.m_time
-        && viewer->m_position.x == manager->m_last_computed_viewer.m_position.x
-        && viewer->m_position.y == manager->m_last_computed_viewer.m_position.y
-        && viewer->m_speed.x == manager->m_last_computed_viewer.m_speed.x
-        && viewer->m_speed.y == manager->m_last_computed_viewer.m_speed.y && manager->m_last_viewer_is_valid)
+    if (viewer->time == manager->last_computed_viewer.time &&
+        viewer->position.x == manager->last_computed_viewer.position.x &&
+        viewer->position.y == manager->last_computed_viewer.position.y &&
+        viewer->speed.x == manager->last_computed_viewer.speed.x &&
+        viewer->speed.y == manager->last_computed_viewer.speed.y && manager->last_viewer_is_valid)
     {
         return;
     }
     // Check if the static obstacles are added
-    if (!manager->m_static_obstacles_added)
+    if (!manager->static_obstacles_added)
     {
-        dj_debug_printf("Static obstacles not added\n");
+        LOGD("Static obstacles not added");
         return;
     }
     // Clear the previous dynamic obstacles
     // (Dynamic obstacles are after the static obstacles in the list)
-    if (manager->m_nb_static_obstacles != 0)
+    if (manager->nb_static_obstacles != 0)
     {
-        static_obstacles_list_reset(&manager->m_computed_obstacles, manager->m_nb_static_obstacles - 1);
+        static_obstacles_list_reset(&manager->computed_obstacles, manager->nb_static_obstacles - 1);
     }
     else
     {
-        static_obstacles_list_clear(&manager->m_computed_obstacles);
+        static_obstacles_list_clear(&manager->computed_obstacles);
     }
 
-    for (dj_dynamic_obstacle_id_e obstacle_id = 0; obstacle_id < DYNAMIC_OBSTACLE_COUNT; obstacle_id++)
+    for (dj_dynamic_obstacle_id_t obstacle_id = 0;
+         obstacle_id <
+         dj_obstacle_id_get_dynamic_obstacle_count(&manager->obstacle_importer->id_generator);
+         obstacle_id++)
     {
-        dj_obstacle_dynamic_t *new_obstacle_to_add = dj_obstacle_importer_get_dynamic_obstacle(obstacle_id);
+        dj_obstacle_dynamic_t *new_obstacle_to_add =
+            dj_obstacle_importer_get_dynamic_obstacle(manager->obstacle_importer, obstacle_id);
         if (new_obstacle_to_add != NULL)
         {
             // Compute the solutions (see dj_obstacle_dynamic_get_position)
             dj_dynamic_polygon_solution_t solutions;
             dj_obstacle_dynamic_get_position(new_obstacle_to_add, viewer, &solutions);
             // Convert the solutions to static obstacles and add them to the manager
-            for (uint32_t i = 0; i < solutions.m_nb_solutions; i++)
+            for (uint32_t i = 0; i < solutions.nb_solutions; i++)
             {
-                dj_obstacle_static_t *new_obstacle_added = static_obstacles_list_add(&manager->m_computed_obstacles, NULL);
-                dj_control_non_null(new_obstacle_added, );
+                dj_obstacle_static_t *new_obstacle_added =
+                    static_obstacles_list_add(&manager->computed_obstacles, NULL);
+                SYSTEM_ASSERT(new_obstacle_added != NULL);
                 dj_obstacle_static_init(new_obstacle_added,
-                                        &solutions.m_solutions[i],
+                                        &solutions.solutions[i],
                                         STATIC_OBSTACLE_UNKNOWN_ID,
-                                        new_obstacle_to_add->m_is_enabled);
+                                        0.f, // Dynamic obstacles are not smooth extracted
+                                        new_obstacle_to_add->is_enabled);
             }
         }
     }
     // The last viewer is valid
-    manager->m_last_viewer_is_valid = true;
+    manager->last_viewer_is_valid = true;
     // The obstacles are computed, so the manager does not need to recompute them if the viewer does not change
-    manager->m_must_recompute = false;
+    manager->must_recompute = false;
     // Save the last viewer
-    manager->m_last_computed_viewer = *viewer;
+    manager->last_computed_viewer = *viewer;
 }
-
-/* ********************************************** Private functions definitions ****************************************** */
 
 /* *********************************************** Public functions declarations ***************************************** */
 
-void dj_obstacle_manager_init(dj_obstacle_manager_t *manager)
+void dj_obstacle_manager_init(dj_obstacle_manager_t *manager,
+                              dj_obstacle_importer_t *obstacle_importer)
 {
-    dj_control_non_null(manager, );
+    SYSTEM_ASSERT(manager != NULL);
+    SYSTEM_ASSERT(obstacle_importer != NULL);
 
-    static_obstacles_list_init(&manager->m_computed_obstacles);
-    manager->m_last_viewer_is_valid = false;
-    manager->m_must_recompute = true;
-    manager->m_static_obstacles_added = false;
-    manager->m_nb_static_obstacles = 0;
-}
-
-void dj_obstacle_manager_deinit(dj_obstacle_manager_t *manager)
-{
-    dj_control_non_null(manager, );
-    // Deinitialize all the obstacles
-    for (uint32_t i = 0; i < static_obstacles_list_size(&manager->m_computed_obstacles); i++)
-    {
-        dj_obstacle_static_t *obstacle = static_obstacles_list_get(&manager->m_computed_obstacles, i);
-        dj_control_non_null(obstacle, );
-        dj_obstacle_static_deinit(obstacle);
-    }
+    static_obstacles_list_init(&manager->computed_obstacles);
+    manager->last_viewer_is_valid = false;
+    manager->must_recompute = true;
+    manager->static_obstacles_added = false;
+    manager->nb_static_obstacles = 0;
+    manager->all_dynamic_null_kinematics = false;
+    manager->obstacle_importer = obstacle_importer;
 }
 
 void dj_obstacle_manager_clear_obstacles(dj_obstacle_manager_t *manager)
 {
-    dj_control_non_null(manager, );
+    SYSTEM_ASSERT(manager != NULL);
 
-    static_obstacles_list_clear(&manager->m_computed_obstacles);
-    manager->m_static_obstacles_added = false;
-    manager->m_must_recompute = true;
+    static_obstacles_list_clear(&manager->computed_obstacles);
+    manager->static_obstacles_added = false;
+    manager->must_recompute = true;
 }
 
 static_obstacles_list_t *dj_obstacle_manager_get_all_obstacles(dj_obstacle_manager_t *manager,
                                                                dj_viewer_status_t *viewer_status)
 {
-    dj_control_non_null(manager, NULL);
+    SYSTEM_ASSERT(manager != NULL);
 
-    dj_mark_start_time(DJ_MARK_OBSTACLE_MANAGER_GET_ALL_OBSTACLES);
+    dj_mark_start_time(OBSTACLE_MANAGER_GET_ALL_OBSTACLES);
 
     // Add all static obstacles if not already added
-    if (!manager->m_static_obstacles_added)
+    if (!manager->static_obstacles_added)
     {
         // Add all static obstacles
-        manager->m_nb_static_obstacles = 0;
-        for (dj_static_obstacle_id_e obstacle_id = 0; obstacle_id < dj_obstacle_id_get_static_obstacle_count();
+        manager->nb_static_obstacles = 0;
+        for (dj_static_obstacle_id_t obstacle_id = 0;
+             obstacle_id <
+             dj_obstacle_id_get_static_obstacle_count(&manager->obstacle_importer->id_generator);
              obstacle_id++)
         {
-            dj_obstacle_static_t *new_obstacle_to_add = dj_obstacle_importer_get_static_obstacle(obstacle_id);
-            dj_control_non_null(new_obstacle_to_add, NULL);
-            if (new_obstacle_to_add->m_is_enabled)
+            dj_obstacle_static_t *new_obstacle_to_add =
+                dj_obstacle_importer_get_static_obstacle(manager->obstacle_importer, obstacle_id);
+            if (new_obstacle_to_add == NULL)
             {
-                dj_obstacle_static_t *new_obstacle_added = static_obstacles_list_add(&manager->m_computed_obstacles, NULL);
-                dj_control_non_null(new_obstacle_added, NULL);
+                continue;
+            }
+            if (new_obstacle_to_add->is_enabled)
+            {
+                dj_obstacle_static_t *new_obstacle_added =
+                    static_obstacles_list_add(&manager->computed_obstacles, NULL);
+                SYSTEM_ASSERT(new_obstacle_added != NULL);
                 dj_obstacle_static_init(new_obstacle_added,
-                                        &new_obstacle_to_add->m_shape,
-                                        new_obstacle_to_add->m_id,
-                                        new_obstacle_to_add->m_is_enabled);
-                manager->m_nb_static_obstacles++;
+                                        &new_obstacle_to_add->shape,
+                                        new_obstacle_to_add->id,
+                                        new_obstacle_to_add->smooth_extraction_radius,
+                                        new_obstacle_to_add->is_enabled);
+                manager->nb_static_obstacles++;
             }
             else
             {
-                dj_debug_printf("Obstacle %d not found, maybe not enabled\n", obstacle_id);
+                LOGD("Obstacle %d not found, maybe not enabled", obstacle_id);
             }
         }
-        manager->m_static_obstacles_added = true;
+        manager->static_obstacles_added = true;
     }
     if (viewer_status != NULL)
     {
-        if (manager->m_must_recompute || viewer_status->m_time != manager->m_last_computed_viewer.m_time
-            || viewer_status->m_position.x != manager->m_last_computed_viewer.m_position.x
-            || viewer_status->m_position.y != manager->m_last_computed_viewer.m_position.y
-            || viewer_status->m_speed.x != manager->m_last_computed_viewer.m_speed.x
-            || viewer_status->m_speed.y != manager->m_last_computed_viewer.m_speed.y || !manager->m_last_viewer_is_valid)
+        // Fast path: if all dynamic obstacles have null kinematics their positions are
+        // viewer-independent. Skip recomputation once the first valid result is cached.
+        if (manager->all_dynamic_null_kinematics && manager->last_viewer_is_valid)
         {
+            dj_mark_end_time(OBSTACLE_MANAGER_GET_ALL_OBSTACLES);
+            return &manager->computed_obstacles;
+        }
+
+        if (manager->must_recompute || viewer_status->time != manager->last_computed_viewer.time ||
+            viewer_status->position.x != manager->last_computed_viewer.position.x ||
+            viewer_status->position.y != manager->last_computed_viewer.position.y ||
+            viewer_status->speed.x != manager->last_computed_viewer.speed.x ||
+            viewer_status->speed.y != manager->last_computed_viewer.speed.y ||
+            !manager->last_viewer_is_valid)
+        {
+            dj_mark_start_time(DYNAMIC_OBSTACLE_COMPUTE);
             compute_dynamic_obstacles(manager, viewer_status);
+            dj_mark_end_time(DYNAMIC_OBSTACLE_COMPUTE);
         }
     }
 
-    dj_mark_end_time(DJ_MARK_OBSTACLE_MANAGER_GET_ALL_OBSTACLES);
+    dj_mark_end_time(OBSTACLE_MANAGER_GET_ALL_OBSTACLES);
 
-    return &manager->m_computed_obstacles;
+    return &manager->computed_obstacles;
 }
 
-bool dj_obstacle_manager_is_point_on_obstacle(static_obstacles_list_t *obstacles, GEOMETRY_point_t point)
+bool dj_obstacle_manager_is_point_on_obstacle(static_obstacles_list_t *obstacles, point_t point)
 {
+    SYSTEM_ASSERT(obstacles != NULL);
     for (uint32_t i = 0; i < static_obstacles_list_size(obstacles); i++)
     {
         dj_obstacle_static_t *obstacle = static_obstacles_list_get(obstacles, i);
-        dj_control_non_null(obstacle, false);
-        if (obstacle->m_is_enabled && obstacle->m_id != STATIC_OBSTACLE_UNKNOWN_ID
-            && GEOMETRY_is_in_polygon(
-                obstacle->m_shape.points, obstacle->m_shape.nb_points, point, (GEOMETRY_point_t){-10000, -10000}, NULL))
+        if (obstacle == NULL)
+        {
+            continue;
+        }
+        const point_t out_point = (point_t){-10000, -10000};
+        if (obstacle->is_enabled && obstacle->id != STATIC_OBSTACLE_UNKNOWN_ID &&
+            is_in_polygon(obstacle->shape.points,
+                          (uint8_t)obstacle->shape.nb_points,
+                          &point,
+                          &out_point,
+                          NULL))
         {
             return true;
         }

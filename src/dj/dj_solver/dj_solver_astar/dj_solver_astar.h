@@ -4,69 +4,58 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_solver_astar.c
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __DJ_SOLVER_DIJKSTRA_H__
-#define __DJ_SOLVER_DIJKSTRA_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
-#include "../../dj_graph/dj_graph_graph.h"
-#include "../../dj_graph/dj_graph_path.h"
-#include "../../dj_graph_builder/dj_graph_builder.h"
-#include "../../dj_viewer/dj_viewer_status.h"
-
+#include "utils/dj/dj_goal_point.h"
+#include "utils/dj/dj_graph/dj_graph_graph.h"
+#include "utils/dj/dj_graph/dj_graph_path.h"
+#include "utils/dj/dj_graph_builder/dj_graph_builder.h"
+#include "utils/dj/dj_solver/dj_solver_common/dj_solver_common.h"
+#include "utils/dj/dj_viewer/dj_viewer_status.h"
 /* ***************************************************** Public macros *************************************************** */
 
 /* ************************************************** Public types definition ******************************************** */
-
-/**
- * @brief Structure to store the A* solver
- */
-typedef struct
-{
-    /**
-     * @brief Graph builder to use
-     */
-    dj_graph_builder_t *graph_builder;
-    /**
-     * @brief Solution of the solver
-     */
-    dj_graph_path_t solution;
-} dj_solver_astar_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
 
 /**
  * @brief Function to initialize the solver
- *
  * @param solver Pointer to the solver to initialize
  * @param graph_builder Pointer to the graph builder to use
+ * @param prebuilt_graph Pointer to the prebuilt graph to use
+ * @param type Type of the solver to initialize (should be DJ_SOLVER_ASTAR)
+ * @param duration_calculator Callback function to calculate the duration of a path
+ * @param duration_calculator_args Arguments to pass to the duration calculator
  */
-void dj_solver_astar_init(dj_solver_astar_t *solver, dj_graph_builder_t *graph_builder);
+void dj_solver_astar_init(dj_solver_t *solver,
+                          dj_graph_builder_t *graph_builder,
+                          dj_graph_graph_t *prebuilt_graph,
+                          dj_solver_type_t type,
+                          dj_graph_path_get_duration_callback_t duration_calculator,
+                          void *duration_calculator_args);
 
 /**
- * @brief Function to deinitialize the solver
- *
- * @param solver Pointer to the solver to deinitialize
+ * @brief Function to solve the graph for one or multiple destinations using A*
+ * @param solver Pointer to the solver
+ * @param start_status Initial status of the viewer
+ * @param initial_heading Initial heading of the viewer
+ * @param goals Array of goal positions
+ * @param goal_count Number of goals
+ * @param solutions_out Array of paths (one per goal), filled on success
+ * @param found_out Array of booleans indicating if each goal was reached
+ * @note The heuristic uses the minimum distance to any unreached goal
  */
-void dj_solver_astar_deinit(dj_solver_astar_t *solver);
-
-/**
- * @brief Function to solve the graph
- *
- * @param solver Pointer to the solver to solve
- */
-void dj_solver_astar_solve(dj_solver_astar_t *solver, dj_viewer_status_t *start_status);
-
-/**
- * @brief Function to get the solution
- *
- * @param solver Pointer to the solver to get the solution from
- * @param solution Pointer to the path to store the solution
- */
-void dj_solver_astar_get_solution(dj_solver_astar_t *solver, dj_graph_path_t *solution);
+void dj_solver_astar_solve(dj_solver_t *solver,
+                           dj_viewer_status_t *start_status,
+                           angle_t initial_heading,
+                           const dj_goal_point_t *goals,
+                           uint32_t goal_count,
+                           dj_graph_path_t *solutions_out,
+                           bool *found_out);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

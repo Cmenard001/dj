@@ -4,16 +4,15 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle.c
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __DJ_OBSTACLE_H__
-#define __DJ_OBSTACLE_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
 #include <stdbool.h>
 #include <stdint.h>
-
 /* ***************************************************** Public macros *************************************************** */
 
 /**
@@ -21,9 +20,9 @@
  * @note Use this macro in the obstacle structures to define the common attributes
  * @warning Put this macro at the beginning of the obstacle structures for correct casting
  */
-#define DJ_OBSTACLE_MOTHER_ATTRIBUTES                                                                                       \
-    dj_obstacle_type_t m_type;                                                                                              \
-    bool m_is_enabled;
+#define DJ_OBSTACLE_MOTHER_ATTRIBUTES                                                              \
+    dj_obstacle_type_t type;                                                                     \
+    bool is_enabled;
 
 /* ************************************************** Public types definition ******************************************** */
 
@@ -52,19 +51,11 @@ typedef struct
 
 /**
  * @brief Function to initialize an generic obstacle
- *
  * @param obstacle Pointer to the obstacle to initialize
  * @param type Type of the obstacle
  * @param id ID of the obstacle (must be unique)
  */
 void dj_obstacle_init(dj_obstacle_t *obstacle, dj_obstacle_type_t type, bool is_enabled);
-
-/**
- * @brief Function to deinitialize an generic obstacle
- *
- * @param obstacle Pointer to the obstacle to deinitialize
- */
-void dj_obstacle_deinit(dj_obstacle_t *obstacle);
 
 /**
  * @brief Function to get the type of an obstacle
@@ -85,5 +76,3 @@ void dj_obstacle_enable(dj_obstacle_t *obstacle, bool enable);
 bool dj_obstacle_is_enabled(dj_obstacle_t *obstacle);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

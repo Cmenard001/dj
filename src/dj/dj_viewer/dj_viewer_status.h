@@ -4,17 +4,17 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_viewer_status.c
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __VIEWER_STATUS_H__
-#define __VIEWER_STATUS_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
-#include "../dj_dependencies/dj_dependencies.h"
-
+#include "utils/maths/point/point.h"
+#include "utils/maths/vector/vector.h"
+#include "utils/time/time.h"
 #include <stdint.h>
-
 /* ***************************************************** Public macros *************************************************** */
 
 /* ************************************************** Public types definition ******************************************** */
@@ -28,48 +28,43 @@ typedef struct
     /**
      * @brief Position of the viewer
      */
-    GEOMETRY_point_t m_position;
+    point_t position;
     /**
      * @brief Speed of the viewer
      */
-    GEOMETRY_vector_t m_speed;
+    vector_2d_distance_t speed;
     /**
      * @brief Time at which the viewer is observing
      */
-    time32_t m_time;
+    time_ms_t time;
 } dj_viewer_status_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
 
 /**
  * @brief Function to initialize a viewer status
- *
  * @param status Pointer to the viewer status to initialize
  * @param position position of the viewer
  * @param speed speed of the viewer
  * @param acceleration acceleration of the viewer
  * @param time time at which the viewer is observing
  */
-void viewer_status_init(dj_viewer_status_t *status, GEOMETRY_point_t *position, GEOMETRY_vector_t *speed, time32_t time);
-
-/**
- * @brief Function to deinitialize a viewer status
- *
- * @param status Pointer to the viewer status to deinitialize
- */
-void viewer_status_deinit(dj_viewer_status_t *status);
+void viewer_status_init(dj_viewer_status_t *status,
+                        const point_t *position,
+                        const vector_2d_distance_t *speed,
+                        time_ms_t time);
 
 /**
  * @brief Function to update a viewer status
- *
  * @param status Pointer to the viewer status to update
  * @param position position of the viewer
  * @param speed speed of the viewer
  * @param acceleration acceleration of the viewer
  * @param time time at which the viewer is observing
  */
-void viewer_status_update(dj_viewer_status_t *status, GEOMETRY_point_t *position, GEOMETRY_vector_t *speed, time32_t time);
+void viewer_status_update(dj_viewer_status_t *status,
+                          const point_t *position,
+                          const vector_2d_distance_t *speed,
+                          time_ms_t time);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

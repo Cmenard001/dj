@@ -4,71 +4,78 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_time_marker.c
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __DJ_TIME_MARKER_H__
-#define __DJ_TIME_MARKER_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
 #include <stdint.h>
-
 /* ***************************************************** Public macros *************************************************** */
 
-#define DJ_MARKERS                                                                                                          \
-    DJ_MARK_ALL, DJ_MARK_FORCE_LINK_START_END, DJ_MARK_BUILD_GRAPH_NODES, DJ_MARK_BUILD_GRAPH_LINKS, DJ_MARK_FIRST_REBUILD, \
-        DJ_MARK_SOLVE, DJ_MARK_REBUILD, DJ_MARK_REBUILD_ENABLE_ALL, DJ_MARK_OBSTACLE_MANAGER_GET_ALL_OBSTACLES,             \
-        DJ_MARK_REBUILD_ADD_OBSTACLE_AS_NODE, DJ_MARK_REBUILD_ADD_VIEWER_AS_NODE, DJ_MARK_REBUILD_DISABLE_LINKS,            \
-        DJ_MARK_PATH_DURATION
+#define DJ_MARKERS                                                                                 \
+    GENERATE_PATH, PREBUILT_GRAPH_REBUILD, ALL, FORCE_LINK_START_END, FORCE_LINK_NODE,             \
+        BUILD_GRAPH_NODES, BUILD_GRAPH_LINKS, FIRST_REBUILD, COPY_PREBUILT_GRAPH, SOLVE, REBUILD,  \
+        REBUILD_ENABLE_ALL, OBSTACLE_MANAGER_GET_ALL_OBSTACLES, DYNAMIC_OBSTACLE_COMPUTE,          \
+        REBUILD_ADD_VIEWER_AS_NODE, REBUILD_DISABLE_LINKS, BUILD_WITH_OBSTACLE, PATH_DURATION,     \
+        SOLVE_EXPLORE_LINKS, SOLVE_FIND_NEXT
 
 /* ************************************************** Public types definition ******************************************** */
 
 typedef enum
 {
     DJ_MARKERS,
-    DJ_TIME_MARKER_TYPE_COUNT
-} dj_time_marker_e;
+    DJ_TIME_MARKER_COUNT
+} dj_time_marker_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
 
 /**
- * @brief Function to reset a time marker
- *
- * @param type
+ * @brief Reset a single time marker, clearing all its statistics
+ * @param type The marker to reset
  */
-void dj_mark_reset(dj_time_marker_e type);
+void dj_mark_reset(dj_time_marker_t type);
 
 /**
- * @brief Function to reset all time markers
+ * @brief Reset all time markers, clearing all their statistics
  */
-void dj_mark_reset_all();
+void dj_mark_reset_all(void);
 
 /**
- * @brief Function to mark the start of a period of time
- *
- * @param type
+ * @brief Mark all markers as unused for the current session, without clearing accumulated statistics
+ * @note Call this at the start of a timed operation to track which markers were used
  */
-void dj_mark_start_time(dj_time_marker_e type);
+void dj_mark_session_reset(void);
 
 /**
- * @brief Function to mark the end of a period of time
- *
- * @param type
+ * @brief Mark the start of a timed period
+ * @param type The marker to start
+ * @note Also marks the marker as used in the current session
  */
-void dj_mark_end_time(dj_time_marker_e type);
+void dj_mark_start_time(dj_time_marker_t type);
 
 /**
- * @brief Function to print the duration of a period of time
- *
- * @param type
+ * @brief Mark the end of a timed period and accumulate statistics
+ * @param type The marker to stop
  */
-void dj_print_duration(dj_time_marker_e type);
+void dj_mark_end_time(dj_time_marker_t type);
 
 /**
- * @brief Function to print the duration of all periods of time
+ * @brief Print the statistics of a single time marker
+ * @param type The marker to print
  */
-void dj_print_all_durations();
+void dj_print_duration(dj_time_marker_t type);
+
+/**
+ * @brief Print the statistics of all time markers
+ */
+void dj_print_all_durations(void);
+
+/**
+ * @brief Print the statistics of all markers that were used in the current session
+ * @param operation_name Name of the operation to display in the header
+ */
+void dj_print_session_durations(const char *operation_name);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

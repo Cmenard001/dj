@@ -11,41 +11,33 @@
  * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __DJ_OVERSIZE_OBSTACLE_H__
-#define __DJ_OVERSIZE_OBSTACLE_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
-#include "dj_polygon.h"
-
+#include "utils/dj/dj_obstacle/dj_polygon.h"
 /* ***************************************************** Public macros *************************************************** */
 
 /**
  * @brief Default mode to use if you don't know what to use
  */
-#define DJ_DEFAULT_OVERSIZE_MODE DJ_OBSRTACLE_OVERSIZE_MODE_1_POINT
-
-/**
- * @brief Default margin to use if you don't know what to use
- * @note This value is in millimeters
- */
-#define DJ_DEFAULT_MARGIN 30
+#define DJ_DEFAULT_OVERSIZE_MODE DJ_OBSTACLE_OVERSIZE_MODE_1_POINT
 
 /* ************************************************** Public types definition ******************************************** */
 
 /**
  * @brief Oversize mode
+ * @warning Values must match number of points except for END_AT_BRAKE and NO_OVERSIZE
  */
 typedef enum
 {
-    DJ_OBSRTACLE_OVERSIZE_MODE_1_POINT = 1,  /**< 1 point by corner */
-    DJ_OBSRTACLE_OVERSIZE_MODE_2_POINTS,     /**< 2 points by corner */
-    DJ_OBSRTACLE_OVERSIZE_MODE_3_POINTS,     /**< 3 points by corner */
-    DJ_OBSRTACLE_OVERSIZE_MODE_4_POINTS,     /**< 4 points by corner */
-    DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE, /**< The angle between the two points will be small enough
+    DJ_OBSTACLE_OVERSIZE_MODE_1_POINT = 1, /**< 1 point by corner */
+    DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,    /**< 2 points by corner */
+    DJ_OBSTACLE_OVERSIZE_MODE_3_POINTS,    /**< 3 points by corner */
+    DJ_OBSTACLE_OVERSIZE_MODE_4_POINTS,    /**< 4 points by corner */
+    DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE, /**< The angle between the two points will be small enough
                                                   to force the propulsion to use END_AT_BRAKE rotations */
-    DJ_OBSRTACLE_OVERSIZE_MODE_NO_OVERSIZE   /**< No oversize */
-} dj_obsrtacle_oversize_mode_e;
+    DJ_OBSTACLE_OVERSIZE_MODE_NO_OVERSIZE   /**< No oversize */
+} dj_obstacle_oversize_mode_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
 
@@ -53,10 +45,10 @@ typedef enum
  * @brief Oversize an obstacle
  * @param[in,out] polygon : the polygon to be oversized (modified in place)
  * @param[in] mode : oversize mode
- * @param[in] margin : margin to take into account in millimeters (default value is DJ_DEFAULT_MARGIN)
+ * @param[in] oversize_distance : distance to take into account in millimeters
  */
-void dj_oversize_obstacle(dj_polygon_t *polygon, dj_obsrtacle_oversize_mode_e mode, uint8_t margin);
+void dj_oversize_obstacle(dj_polygon_t *polygon,
+                          dj_obstacle_oversize_mode_t mode,
+                          distance_t oversize_distance);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

@@ -4,12 +4,15 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle.h
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
 
-#include "dj_obstacle.h"
-#include "../dj_logs/dj_logs.h"
+#include "utils/dj/dj_obstacle/dj_obstacle.h"
+#include "system/assert/system_assert.h"
+#include <stddef.h>
 
 /* **************************************************** Private macros *************************************************** */
 
@@ -25,28 +28,27 @@
 
 void dj_obstacle_init(dj_obstacle_t *obstacle, dj_obstacle_type_t type, bool is_enabled)
 {
-    dj_control_non_null(obstacle, ) obstacle->m_type = type;
-    obstacle->m_is_enabled = is_enabled;
-}
-
-void dj_obstacle_deinit(dj_obstacle_t *obstacle)
-{
-    // Nothing to do
+    SYSTEM_ASSERT(obstacle != NULL);
+    obstacle->type = type;
+    obstacle->is_enabled = is_enabled;
 }
 
 dj_obstacle_type_t dj_obstacle_get_type(dj_obstacle_t *obstacle)
 {
-    dj_control_non_null(obstacle, DJ_OBSTACLE_TYPE_COUNT) return obstacle->m_type;
+    SYSTEM_ASSERT(obstacle != NULL);
+    return obstacle->type;
 }
 
 void dj_obstacle_enable(dj_obstacle_t *obstacle, bool enable)
 {
-    dj_control_non_null(obstacle, ) obstacle->m_is_enabled = enable;
+    SYSTEM_ASSERT(obstacle != NULL);
+    obstacle->is_enabled = enable;
 }
 
 bool dj_obstacle_is_enabled(dj_obstacle_t *obstacle)
 {
-    dj_control_non_null(obstacle, false) return obstacle->m_is_enabled;
+    SYSTEM_ASSERT(obstacle != NULL);
+    return obstacle->is_enabled;
 }
 
 /* ******************************************* Public callback functions declarations ************************************ */

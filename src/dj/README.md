@@ -73,13 +73,6 @@ Le fichier de configuration de DJ est le fichier [`dj_config.h`](dj_config.h). C
 - `DJ_OBSTACLE_MANAGER_MAX_IMPORTED_OBSTACLES` : Nombre maximum d'obstacles importés. À régler en fonction du nombre d'obstacles dynamiques que vous avez. Prendre un peu de marge mais éviter de prendre trop de RAM.
 - `DJ_POLYGON_MAX_POINTS` : Nombre maximum de points dans un polygone. À régler en fonction du nombre de points que vous avez dans vos obstacles. Prendre un peu de marge suivant le type d'agrandissement que vous utilisez (voir [ici](./dj_obstacle_importer/dj_obstacle_importer.c)).
 
-## Portage
-En cas de portage de DJ, voici la liste des fichiers à modifier :
-- [Le fichier de configuration](dj_config.h) : il faut adapter les constantes et les configurations à votre robot.
-- [Le fichier de dépendances](./dj_dependencies/dj_dependencies.c) et son [.h](./dj_dependencies/dj_dependencies.h) : il faut adapter les dépendances à votre environnement.
-- Quelques fichiers de la QS (QS_maths..., QS_magic_array, QS_macros).
-- [Le fichier de la MAE principale](./dj_launcher/dj_try_going.c).
-
 ## Fonctionnement
 Cette section explique le fonctionnement de l'algorithme DJ.
 
@@ -109,7 +102,7 @@ Les liens qui passent par un obstacle dynamique sont désactivés. Cela signifie
 ##### Conversion des obstacles dynamiques en obstacles statiques
 Pour convertir un obstacle dynamique en obstacle statique, DJ considère la position de l'obstacle dynamique dans l'espace-temps depuis la position du sommet où se trouve l'algorithme. Plus simplement, il calcule les positions où le robot pourrait croiser le centre de l'obstacle dynamique en suivant les chemins les plus directs.
 
-Cela signifie qu'un obstacle dynamique peut avoir plusieurs positions statiques (jusqu'à 8 au maximum, en prenant en compte des cas avec `END_AT_BRAKE` ou `END_AT_LAST_POINT`). Pour le détail des mathématiques, voir la partie [mathématiques](##Mathématiques). En pratique, il est rare qu'un obstacle dynamique ait plus de 2 positions statiques.
+Cela signifie qu'un obstacle dynamique peut avoir plusieurs positions statiques (jusqu'à 8 au maximum, en prenant en compte des cas avec `END_AT_BRAKE` ou `END_AT_LAST_POINT`). Pour le détail des mathematiques, voir la partie [mathématiques](##Mathématiques). En pratique, il est rare qu'un obstacle dynamique ait plus de 2 positions statiques.
 
 Ces positions statiques sont ajoutées au graphe de la même manière que les obstacles statiques.
 
@@ -253,7 +246,7 @@ $$
 + \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)^2
 $$
 $$
-- \left(V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)^2
+- \left(V_{\text{robi}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)^2
 $$
 
 
@@ -324,4 +317,4 @@ Les tâches à effectuer pour améliorer DJ :
 - [ ] Prendre en compte la pré-rotation du robot avant la première translation.
 - [ ] Prendre en compte le dernier déplacement en fonction de son type (`END_AT_BRAKE` ou `END_AT_LAST_POINT`).
 - [ ] Implémenter une interaction avec le système de propulsion pour demander les coefficients de propulsion et éviter la redondance de code. Cela permettrait également de gérer les changements d'accélération pendant le match.
-- [ ] Fixer [ce bug](.\dj_obstacle\dj_obstacle_dynamic.c).
+- [ ] Implémenter le solver utilisant A*.

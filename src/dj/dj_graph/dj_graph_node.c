@@ -4,15 +4,15 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_graph_node.h
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
 
-#include "dj_graph_node.h"
-#include "../dj_logs/dj_logs.h"
-
+#include "utils/dj/dj_graph/dj_graph_node.h"
+#include "system/assert/system_assert.h"
 #include <stdlib.h>
-
 /* **************************************************** Private macros *************************************************** */
 
 /* ************************************************ Private type definition ********************************************** */
@@ -25,37 +25,32 @@
 
 /* *********************************************** Public functions declarations ***************************************** */
 
-void dj_graph_node_init(dj_graph_node_t *node, GEOMETRY_point_t *pos)
+void dj_graph_node_init(dj_graph_node_t *node, const point_t *pos)
 {
-    dj_control_non_null(node, );
-    dj_control_non_null(pos, );
-    node->m_pos = *pos;
-    node->m_enabled = true;
+    SYSTEM_ASSERT(node != NULL);
+    SYSTEM_ASSERT(pos != NULL);
+    node->pos = *pos;
+    node->enabled = true;
+    node->adj_count = 0;
 }
 
-void dj_graph_node_deinit(dj_graph_node_t *node)
+point_t dj_graph_node_get_pos(const dj_graph_node_t *node)
 {
-    // Nothing to do
+    SYSTEM_ASSERT(node != NULL);
+    return node->pos;
 }
 
-GEOMETRY_point_t dj_graph_node_get_pos(dj_graph_node_t *node)
+inline bool dj_graph_node_compare(const dj_graph_node_t *node1, const dj_graph_node_t *node2)
 {
-    GEOMETRY_point_t null_point = {0, 0};
-    dj_control_non_null(node, null_point);
-    return node->m_pos;
-}
-
-inline bool dj_graph_node_compare(dj_graph_node_t *node1, dj_graph_node_t *node2)
-{
-    dj_control_non_null(node1, false);
-    dj_control_non_null(node2, false);
-    return GEOMETRY_point_compare(node1->m_pos, node2->m_pos);
+    SYSTEM_ASSERT(node1 != NULL);
+    SYSTEM_ASSERT(node2 != NULL);
+    return point_compare(&node1->pos, &node2->pos);
 }
 
 void dj_graph_node_enable(dj_graph_node_t *node, bool enable)
 {
-    dj_control_non_null(node, );
-    node->m_enabled = enable;
+    SYSTEM_ASSERT(node != NULL);
+    node->enabled = enable;
 }
 
 /* ******************************************* Public callback functions declarations ************************************ */
