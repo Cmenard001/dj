@@ -37,15 +37,14 @@
             ],
             "settings": {
                 "cmake.configureOnOpen": true,
-                "cmake.buildDirectory": "${workspaceFolder}/build",
                 "cmake.preferredGenerators": [
                     "Ninja"
                 ],
-                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+                "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "C_Cpp.intelliSenseEngine": "default"
             }
         }
     },
-    // Select the linux preset by default; switch via the CMake Tools status bar
-    "postCreateCommand": "cmake --preset linux_preset -S /workspace -B /workspace/build/linux || true",
     "remoteUser": "dev"
 }
