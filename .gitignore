@@ -22,3 +22,5 @@ src/utils/shape
 src/system
 src/propulsion
 src/hmi
+.build-cache
+compile_commands.json

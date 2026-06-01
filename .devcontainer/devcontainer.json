@@ -11,8 +11,8 @@
         "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
     },
     "mounts": [
-        // Persist CMake build cache between container rebuilds
-        "source=dj-cmake-build,target=/workspace/build,type=volume",
+        // Persist CMake build cache between container rebuilds (bind mount keeps host user ownership)
+        "source=${localWorkspaceFolder}/.build-cache,target=/workspace/build,type=bind,consistency=cached",
         // Mount SSH config + known_hosts for remote deployment
         "source=${localEnv:HOME}/.ssh,target=/home/dev/.ssh,type=bind,readonly"
     ],
