@@ -10,6 +10,8 @@
     "remoteEnv": {
         "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
     },
+    // Create host-side directories required by mounts before container starts
+    "initializeCommand": "mkdir -p .build-cache && mkdir -p ~/.ssh && chmod 700 ~/.ssh",
     "mounts": [
         // Persist CMake build cache between container rebuilds (bind mount keeps host user ownership)
         "source=${localWorkspaceFolder}/.build-cache,target=/workspace/build,type=bind,consistency=cached",
