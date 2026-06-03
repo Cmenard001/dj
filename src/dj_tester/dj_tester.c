@@ -39,82 +39,288 @@ static void build_result_filename(const char *hw_name, char *buf, size_t buf_len
  */
 static const dj_test_suite_config_t g_suites[] = {
     {
-        .name             = "Terrain vide 2x3m",
+        .name             = "Playground 2025",
         .nb_tests         = 50,
         .playground_min_x = 0,
         .playground_max_x = 2000,
         .playground_min_y = 0,
         .playground_max_y = 3000,
-        .nb_obstacles     = 0,
-        .obstacles        = {},
-    },
-    {
-        .name             = "Obstacle central unique",
-        .nb_tests         = 50,
-        .playground_min_x = 0,
-        .playground_max_x = 2000,
-        .playground_min_y = 0,
-        .playground_max_y = 3000,
-        .nb_obstacles     = 1,
+        .nb_obstacles     = 10,
         .obstacles        = {
             {
+                /* Plateforme (gauche) */
                 .polygon = DJ_CREATE_POLYGON(
-                    {.x = 800,  .y = 1200},
-                    {.x = 1200, .y = 1200},
-                    {.x = 1200, .y = 1800},
-                    {.x = 800,  .y = 1800}
+                    {.x = 0,   .y = 650},
+                    {.x = 200, .y = 650},
+                    {.x = 200, .y = 1050},
+                    {.x = 450, .y = 1050},
+                    {.x = 450, .y = 1950},
+                    {.x = 200, .y = 1950},
+                    {.x = 200, .y = 2350},
+                    {.x = 0,   .y = 2350}
                 ),
-                .is_enabled              = true,
-                .oversize_mode           = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                  = 150.0f,
+                .is_enabled               = true,
+                .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Zone départ/arrivée adversaire (coin haut-gauche) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 0,   .y = 2400},
+                    {.x = 0,   .y = 2850},
+                    {.x = 450, .y = 2850},
+                    {.x = 450, .y = 2400}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Zone construction adversaire 3 (droite, haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1850, .y = 2005},
+                    {.x = 1850, .y = 2455},
+                    {.x = 2000, .y = 2455},
+                    {.x = 2000, .y = 2005}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Zone construction adversaire 4 (droite, bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1850, .y = 0},
+                    {.x = 1850, .y = 450},
+                    {.x = 2000, .y = 450},
+                    {.x = 2000, .y = 0}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 3 (gauche, milieu bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 225, .y = 625},
+                    {.x = 225, .y = 1025},
+                    {.x = 325, .y = 1025},
+                    {.x = 325, .y = 625}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 4 (droite, milieu bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1700, .y = 575},
+                    {.x = 1700, .y = 975},
+                    {.x = 1800, .y = 975},
+                    {.x = 1800, .y = 575}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 5 (centre, bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1000, .y = 900},
+                    {.x = 1000, .y = 1300},
+                    {.x = 1100, .y = 1300},
+                    {.x = 1100, .y = 900}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 6 (centre, haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1000, .y = 1700},
+                    {.x = 1000, .y = 2100},
+                    {.x = 1100, .y = 2100},
+                    {.x = 1100, .y = 1700}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 7 (gauche, milieu haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 225, .y = 1975},
+                    {.x = 225, .y = 2375},
+                    {.x = 325, .y = 2375},
+                    {.x = 325, .y = 1975}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
+                .smooth_extraction_radius = 50.0f,
+            },
+            {
+                /* Colonne 8 (droite, milieu haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1700, .y = 2025},
+                    {.x = 1700, .y = 2425},
+                    {.x = 1800, .y = 2425},
+                    {.x = 1800, .y = 2025}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
+                .margin                   = 150.0f,
                 .smooth_extraction_radius = 50.0f,
             },
         },
     },
     {
-        .name             = "Couloir avec obstacles complexes",
+        .name             = "Playground 2026",
         .nb_tests         = 50,
         .playground_min_x = 0,
         .playground_max_x = 2000,
         .playground_min_y = 0,
         .playground_max_y = 3000,
-        .nb_obstacles     = 3,
+        .nb_obstacles     = 10,
         .obstacles        = {
             {
+                /* Zone départ adversaire (coin haut-gauche) */
                 .polygon = DJ_CREATE_POLYGON(
-                    {.x = 0,    .y = 1000},
-                    {.x = 700,  .y = 1000},
-                    {.x = 700,  .y = 1200},
-                    {.x = 0,    .y = 1200}
+                    {.x = 0,   .y = 2400},
+                    {.x = 0,   .y = 3000},
+                    {.x = 450, .y = 3000},
+                    {.x = 450, .y = 2400}
                 ),
-                .is_enabled              = true,
-                .oversize_mode           = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                  = 150.0f,
-                .smooth_extraction_radius = 50.0f,
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
             },
             {
+                /* Dispose 2 (gauche, milieu bas) */
                 .polygon = DJ_CREATE_POLYGON(
-                    {.x = 1300, .y = 1000},
-                    {.x = 2000, .y = 1000},
-                    {.x = 2000, .y = 1200},
-                    {.x = 1300, .y = 1200}
+                    {.x = 450, .y = 1150},
+                    {.x = 450, .y = 1350},
+                    {.x = 650, .y = 1350},
+                    {.x = 650, .y = 1150}
                 ),
-                .is_enabled              = true,
-                .oversize_mode           = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                  = 150.0f,
-                .smooth_extraction_radius = 50.0f,
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
             },
             {
+                /* Dispose 3 (gauche, milieu haut) */
                 .polygon = DJ_CREATE_POLYGON(
-                    {.x = 0,    .y = 2000},
-                    {.x = 800,  .y = 2000},
-                    {.x = 800,  .y = 2200},
-                    {.x = 0,    .y = 2200}
+                    {.x = 450, .y = 1650},
+                    {.x = 450, .y = 1850},
+                    {.x = 650, .y = 1850},
+                    {.x = 650, .y = 1650}
                 ),
-                .is_enabled              = true,
-                .oversize_mode           = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                  = 150.0f,
-                .smooth_extraction_radius = 50.0f,
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 5 (centre, bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1100, .y = 700},
+                    {.x = 1100, .y = 900},
+                    {.x = 1300, .y = 900},
+                    {.x = 1300, .y = 700}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 6 (centre, milieu) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1100, .y = 1400},
+                    {.x = 1100, .y = 1600},
+                    {.x = 1300, .y = 1600},
+                    {.x = 1300, .y = 1400}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 7 (centre, haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1100, .y = 2100},
+                    {.x = 1100, .y = 2300},
+                    {.x = 1300, .y = 2300},
+                    {.x = 1300, .y = 2100}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 9 (droite, bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1750, .y = 600},
+                    {.x = 1750, .y = 800},
+                    {.x = 2000, .y = 800},
+                    {.x = 2000, .y = 600}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 10 (droite, milieu) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1750, .y = 1400},
+                    {.x = 1750, .y = 1600},
+                    {.x = 2000, .y = 1600},
+                    {.x = 2000, .y = 1400}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Dispose 11 (droite, haut) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1750, .y = 2200},
+                    {.x = 1750, .y = 2400},
+                    {.x = 2000, .y = 2400},
+                    {.x = 2000, .y = 2200}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
+            },
+            {
+                /* Storage 5 (centre, milieu bas) */
+                .polygon = DJ_CREATE_POLYGON(
+                    {.x = 1125, .y = 1050},
+                    {.x = 1125, .y = 1250},
+                    {.x = 1275, .y = 1250},
+                    {.x = 1275, .y = 1050}
+                ),
+                .is_enabled               = true,
+                .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_2_POINTS,
+                .margin                   = 10.0f,
+                .smooth_extraction_radius = 100.0f,
             },
         },
     },
