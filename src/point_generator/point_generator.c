@@ -35,8 +35,6 @@
 
 static uint32_t generate_random_number();
 
-static void integer_to_coordinate(uint32_t random_number, point_t *out);
-
 /* ************************************************** Private variables ************************************************** */
 
 static int32_t g_min_x = DEFAULT_MIN_X;
@@ -59,13 +57,6 @@ static uint32_t generate_random_number()
     return state;
 }
 
-static void integer_to_coordinate(uint32_t random_number, point_t *out)
-{
-    // Converts the random number to a coordinate within the current bounds
-    out->x = (distance_t)((int32_t)(random_number % (uint32_t)(g_max_x - g_min_x + 1)) + g_min_x);
-    out->y = (distance_t)((int32_t)(random_number % (uint32_t)(g_max_y - g_min_y + 1)) + g_min_y);
-}
-
 /* ********************************************** Public functions definitions ******************************************* */
 
 void point_generator_set_bounds(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y)
@@ -78,8 +69,10 @@ void point_generator_set_bounds(int32_t min_x, int32_t max_x, int32_t min_y, int
 
 void generate_point(point_t *out)
 {
-    uint32_t random_number = generate_random_number();
-    integer_to_coordinate(random_number, out);
+    uint32_t x_rand = generate_random_number();
+    uint32_t y_rand = generate_random_number();
+    out->x = (distance_t)((int32_t)(x_rand % (uint32_t)(g_max_x - g_min_x + 1)) + g_min_x);
+    out->y = (distance_t)((int32_t)(y_rand % (uint32_t)(g_max_y - g_min_y + 1)) + g_min_y);
 }
 
 /* ***************************************** Public callback functions definitions *************************************** */
