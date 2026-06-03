@@ -63,6 +63,9 @@ cmake --build build/linux_preset --target doxygen
 # HTML généré dans build/linux_preset/docs/html
 ```
 
+Un site GitHub Pages est automatiquement mis à jour à chaque push sur la branche `main` (voir [Intégration continue](#intégration-continue)).
+Ce site est aussi accessible à l'adresse : https://cmenard001.github.io/dj/
+
 ## Intégration continue
 Un workflow [GitHub Actions](./.github/workflows/ci.yml) :
 - construit l'image du Dev Container et la pousse sur GHCR pour que les jobs s'exécutent dans le même environnement que le développement local ;
