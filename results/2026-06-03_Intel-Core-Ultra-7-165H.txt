@@ -1,0 +1,17 @@
+DJ Pathfinding Benchmark
+Hardware: Intel-Core-Ultra-7-165H
+
+--- Suite: Playground 2025 ---
+Tests     : 50
+Success   : 50/50
+Wall time : 13 ms
+CPU time  : 12804 us
+
+--- Suite: Playground 2026 ---
+Tests     : 50
+Success   : 50/50
+Wall time : 20 ms
+CPU time  : 19972 us
+
+=== TOTAL: 100/100 ===
+

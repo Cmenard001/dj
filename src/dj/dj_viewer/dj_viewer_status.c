@@ -4,16 +4,18 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_viewer_status.h
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
 
-#include "dj_viewer_status.h"
-#include "../dj_dependencies/dj_dependencies.h"
-#include "../dj_logs/dj_logs.h"
-
+#include "utils/dj/dj_viewer/dj_viewer_status.h"
+#include "system/assert/system_assert.h"
+#include "system/log/log.h"
 #include <stdlib.h>
 
+LOG_REGISTER("utils/dj/viewer_status");
 /* **************************************************** Private macros *************************************************** */
 
 /* ************************************************ Private type definition ********************************************** */
@@ -26,27 +28,28 @@
 
 /* *********************************************** Public functions declarations ***************************************** */
 
-void viewer_status_init(dj_viewer_status_t *status, GEOMETRY_point_t *position, GEOMETRY_vector_t *speed, time32_t time)
+void viewer_status_init(dj_viewer_status_t *status,
+                        const point_t *position,
+                        const vector_2d_distance_t *speed,
+                        time_ms_t time)
 {
-    dj_control_non_null(status, );
-    dj_control_non_null(position, );
-    dj_control_non_null(speed, );
+    SYSTEM_ASSERT(status != NULL);
+    SYSTEM_ASSERT(position != NULL);
+    SYSTEM_ASSERT(speed != NULL);
     viewer_status_update(status, position, speed, time);
 }
 
-void viewer_status_deinit(dj_viewer_status_t *status)
+void viewer_status_update(dj_viewer_status_t *status,
+                          const point_t *position,
+                          const vector_2d_distance_t *speed,
+                          time_ms_t time)
 {
-    // Nothing to do
-}
-
-void viewer_status_update(dj_viewer_status_t *status, GEOMETRY_point_t *position, GEOMETRY_vector_t *speed, time32_t time)
-{
-    dj_control_non_null(status, );
-    dj_control_non_null(position, );
-    dj_control_non_null(speed, );
-    status->m_position = *position;
-    status->m_speed = *speed;
-    status->m_time = time;
+    SYSTEM_ASSERT(status != NULL);
+    SYSTEM_ASSERT(position != NULL);
+    SYSTEM_ASSERT(speed != NULL);
+    status->position = *position;
+    status->speed = *speed;
+    status->time = time;
 }
 
 /* ******************************************* Public callback functions declarations ************************************ */

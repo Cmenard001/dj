@@ -23,29 +23,31 @@
 
 void dj_test_init(dj_test_t *test, dj_test_params_t *params)
 {
-    // Initialize the test parameters
-    test->m_params = *params;
-    // Set the start time to the current time in milliseconds
-    test->m_start_time = time_ms();
-    // Set the end time to 0 (not finished yet)
-    test->m_end_time = 0;
-    // Set success to false (not successful yet)
-    test->m_success = false;
+    test->m_params       = *params;
+    test->m_start_time   = time_ms();
+    test->m_end_time     = 0;
+    test->m_cpu_start_us = 0;
+    test->m_cpu_end_us   = 0;
+    test->m_success      = false;
 }
 
 void dj_test_start(dj_test_t *test)
 {
-    // Set the start time to the current time in milliseconds
-    test->m_start_time = time_ms();
-    // Start the test
-    test->m_success = dj_test_params_start_test(&test->m_params);
-    // Set the end time to the current time in milliseconds
-    test->m_end_time = time_ms();
+    test->m_start_time   = time_ms();
+    test->m_cpu_start_us = time_cpu_us();
+    test->m_success      = dj_test_params_start_test(&test->m_params);
+    test->m_cpu_end_us   = time_cpu_us();
+    test->m_end_time     = time_ms();
 }
 
 time_ms_t dj_test_get_duration(const dj_test_t *test)
 {
     return test->m_end_time - test->m_start_time;
+}
+
+time_us_t dj_test_get_cpu_duration(const dj_test_t *test)
+{
+    return test->m_cpu_end_us - test->m_cpu_start_us;
 }
 
 /* ***************************************** Public callback functions definitions *************************************** */

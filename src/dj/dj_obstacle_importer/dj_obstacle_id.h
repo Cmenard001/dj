@@ -4,130 +4,99 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obstacle_id.c
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
-#ifndef __DJ_OBSTACLE_ID_H__
-#define __DJ_OBSTACLE_ID_H__
-
+#pragma once
 /* ******************************************************* Includes ****************************************************** */
 
 #include <stdint.h>
-
 /* ***************************************************** Public macros *************************************************** */
 
 /**
  * @brief Id pour les solutions statiques des obstacles dynamiques
- * @see dj_dynamic_obstacle_id_e
+ * @see dj_dynamic_obstacle_id_t
  */
-#define STATIC_OBSTACLE_UNKNOWN_ID ((dj_static_obstacle_id_e)(-1))
+#define STATIC_OBSTACLE_UNKNOWN_ID ((dj_static_obstacle_id_t)(-1))
 
 /* ************************************************** Public types definition ******************************************** */
 
 /**
- * @brief Énumération des identifiants des polygones
+ * @brief Enumération des identifiants des obstacles statiques
+ * @note Depuis le portage vers Flexibot, les obstacles statiques sont des entiers
+ * quelconques (int32_t) et plus une énumération car ils ne sont plus spécifiques
+ * au robot.
  */
-typedef enum
-{
-    // Ajoute ici les polygones statiques :
-    //	Exemple :
-    //	STATIC_OBSTACLE_EXEMPLE,
-
-    /* Start/end area + building area */
-    STATIC_OBSTACLE_START_END_AREA_ADV,
-    STATIC_OBSTACLE_BUILDING_AREA_OUR_1,
-    STATIC_OBSTACLE_BUILDING_AREA_OUR_2,
-    STATIC_OBSTACLE_BUILDING_AREA_OUR_3,
-    STATIC_OBSTACLE_BUILDING_AREA_OUR_4,
-    STATIC_OBSTACLE_BUILDING_AREA_ADV_1,
-    STATIC_OBSTACLE_BUILDING_AREA_ADV_2,
-    STATIC_OBSTACLE_BUILDING_AREA_ADV_3,
-    STATIC_OBSTACLE_BUILDING_AREA_ADV_4,
-
-    /* Columns storage */
-    STATIC_OBSTACLE_COLUMN_1,
-    STATIC_OBSTACLE_COLUMN_2,
-    STATIC_OBSTACLE_COLUMN_3,
-    STATIC_OBSTACLE_COLUMN_4,
-    STATIC_OBSTACLE_COLUMN_5,
-    STATIC_OBSTACLE_COLUMN_6,
-    STATIC_OBSTACLE_COLUMN_7,
-    STATIC_OBSTACLE_COLUMN_8,
-    STATIC_OBSTACLE_COLUMN_9,
-    STATIC_OBSTACLE_COLUMN_10,
-
-    /* PAMI start area */
-    STATIC_OBSTACLE_PAMI_START_AREA_OUR,
-    STATIC_OBSTACLE_PAMI_START_AREA_ADV,
-
-    /* Platform */
-    STATIC_OBSTACLE_PLATFORM,
-
-    /* PAMI trajectories areas */
-    STATIC_OBSTACLE_PAMI_START_TRAJECTORY_AREA,
-    STATIC_OBSTACLE_PAMI_END_TRAJECTORY_AREA,
-
-    /**
-     * @brief Nombre d'obstacles statiques importés statiquement
-     * @warning Dans la plupart des cas, ne pas utiliser cette valeur
-     * car il peut y avoir des obstacles statiques importés dynamiquement
-     * @see TODO: Mettre le lien vers la documentation de l'import dynamique
-     */
-    STATIC_OBSTACLE_COUNT,
-} dj_static_obstacle_id_e;
+typedef int32_t dj_static_obstacle_id_t;
 
 /**
- * @brief Énumération des identifiants des obstacles dynamiques
+ * @brief Enumération des identifiants des obstacles dynamiques
+ * @note Depuis le portage vers Flexibot, les obstacles dynamiques sont des entiers
+ * quelconques (int32_t) et plus une énumération car ils ne sont plus spécifiques
+ * au robot.
  */
-typedef enum
+typedef int32_t dj_dynamic_obstacle_id_t;
+
+/**
+ * @brief Structure représentant un générateur d'identifiants d'obstacles
+ */
+typedef struct
 {
-    // Ajoute ici les obstacles dynamiques :
-    //	Exemple :
-    //	DYNAMIC_OBSTACLE_EXEMPLE,
-    // DYNAMIC_OBSTACLE_ADV_ROBOT,
+    /**
+     * @brief Index for attributions of static obstacles
+     * @note The index is the next available id
+     */
+    dj_static_obstacle_id_t dj_static_obstacle_id;
 
     /**
-     * @brief Nombre d'obstacles dynamiques importés statiquement
-     * @warning Dans la plupart des cas, ne pas utiliser cette valeur
-     * car il peut y avoir des obstacles dynamiques importés dynamiquement
-     * @see TODO: Mettre le lien vers la documentation de l'import dynamique
+     * @brief Index for attributions of dynamic obstacles
+     * @note The index is the next available id
      */
-    DYNAMIC_OBSTACLE_COUNT
-} dj_dynamic_obstacle_id_e;
+    dj_dynamic_obstacle_id_t dj_dynamic_obstacle_id;
+} dj_obstacle_id_generator_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
+
+/**
+ * @brief Initialisation du générateur d'identifiants d'obstacles
+ */
+void dj_obstacle_id_generator_init(dj_obstacle_id_generator_t *generator);
 
 /**
  * @brief Fonction de génération d'un identifiant d'obstacle statique unique
  * @warning L'identifiant généré est unique et ne pourra pas être relaché.
  * Faites attention à ne pas en générer trop.
- *
- * @return dj_static_obstacle_id_e Identifiant d'obstacle statique unique généré
+ * @param generator Générateur d'identifiants d'obstacles
+ * @return dj_static_obstacle_id_t Identifiant d'obstacle statique unique généré
  */
-dj_static_obstacle_id_e dj_obstacle_id_generate_static_obstacle_id();
+dj_static_obstacle_id_t dj_obstacle_id_generate_static_obstacle_id(
+    dj_obstacle_id_generator_t *generator);
 
 /**
  * @brief Fonction de génération d'un identifiant d'obstacle dynamique unique
  * @warning L'identifiant généré est unique et ne pourra pas être relaché.
  * Faites attention à ne pas en générer trop.
- *
- * @return dj_dynamic_obstacle_id_e Identifiant d'obstacle dynamique unique généré
+ * @param generator Générateur d'identifiants d'obstacles
+ * @return dj_dynamic_obstacle_id_t Identifiant d'obstacle dynamique unique généré
  */
-dj_dynamic_obstacle_id_e dj_obstacle_id_generate_dynamic_obstacle_id();
+dj_dynamic_obstacle_id_t dj_obstacle_id_generate_dynamic_obstacle_id(
+    dj_obstacle_id_generator_t *generator);
 
 /**
  * @brief Fonction de récupération du nombre d'obstacles statiques importés statiquement et dynamiquement
- *
- * @return dj_static_obstacle_id_e Nombre d'obstacles statiques importés
+ * @param generator Générateur d'identifiants d'obstacles
+ * @return dj_static_obstacle_id_t Nombre d'obstacles statiques importés
  */
-dj_static_obstacle_id_e dj_obstacle_id_get_static_obstacle_count();
+dj_static_obstacle_id_t dj_obstacle_id_get_static_obstacle_count(
+    const dj_obstacle_id_generator_t *generator);
 
 /**
  * @brief Fonction de récupération du nombre d'obstacles dynamiques importés statiquement et dynamiquement
- *
- * @return dj_dynamic_obstacle_id_e Nombre d'obstacles dynamiques importés
+ * @param generator Générateur d'identifiants d'obstacles
+ * @return dj_dynamic_obstacle_id_t Nombre d'obstacles dynamiques importés
  */
-dj_dynamic_obstacle_id_e dj_obstacle_id_get_dynamic_obstacle_count();
+dj_dynamic_obstacle_id_t dj_obstacle_id_get_dynamic_obstacle_count(
+    const dj_obstacle_id_generator_t *generator);
 
 /* ******************************************* Public callback functions declarations ************************************ */
-
-#endif

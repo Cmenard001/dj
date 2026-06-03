@@ -9,6 +9,7 @@
 
 /* ******************************************************* Includes ****************************************************** */
 #include "point_generator.h"
+#include <stdint.h>
 
 /* **************************************************** Private macros *************************************************** */
 
@@ -21,12 +22,12 @@
 #define LCG_SEED         123456789U
 
 /**
- * @brief Playground boundaries.
+ * @brief Playground boundaries (configurable at runtime via point_generator_set_bounds).
  */
-#define PLAYGROUND_MIN_X (300)
-#define PLAYGROUND_MAX_X (1700)
-#define PLAYGROUND_MIN_Y (300)
-#define PLAYGROUND_MAX_Y (2700)
+#define DEFAULT_MIN_X (300)
+#define DEFAULT_MAX_X (1700)
+#define DEFAULT_MIN_Y (300)
+#define DEFAULT_MAX_Y (2700)
 
 /* ************************************************ Private type definition ********************************************** */
 
@@ -34,9 +35,17 @@
 
 static uint32_t generate_random_number();
 
-static void integer_to_coordinate(uint32_t random_number, GEOMETRY_point_t *out);
-
 /* ************************************************** Private variables ************************************************** */
+
+static int32_t g_min_x = DEFAULT_MIN_X;
+static int32_t g_max_x = DEFAULT_MAX_X;
+static int32_t g_min_y = DEFAULT_MIN_Y;
+static int32_t g_max_y = DEFAULT_MAX_Y;
+
+/**
+ * @brief Current LCG state. Fixed initial seed for reproducibility.
+ */
+static uint32_t g_lcg_state = LCG_SEED;
 
 /* ********************************************** Private functions definitions ****************************************** */
 
@@ -48,25 +57,31 @@ static void integer_to_coordinate(uint32_t random_number, GEOMETRY_point_t *out)
 static uint32_t generate_random_number()
 {
     // Deterministic pseudo-random generator (LCG)
-    static uint32_t state = LCG_SEED; // Fixed seed for reproducibility
-    state = (LCG_MULTIPLIER * state + LCG_INCREMENT) & LCG_MASK;
-    return state;
-}
-
-static void integer_to_coordinate(uint32_t random_number, GEOMETRY_point_t *out)
-{
-    // Converts the random number to a coordinate in the range [PLAYGROUND_MIN_X, PLAYGROUND_MAX_X]
-    out->x = (random_number % (PLAYGROUND_MAX_X - PLAYGROUND_MIN_X + 1)) + PLAYGROUND_MIN_X;
-    // Converts the random number to a coordinate in the range [PLAYGROUND_MIN_Y, PLAYGROUND_MAX_Y]
-    out->y = (random_number % (PLAYGROUND_MAX_Y - PLAYGROUND_MIN_Y + 1)) + PLAYGROUND_MIN_Y;
+    g_lcg_state = (LCG_MULTIPLIER * g_lcg_state + LCG_INCREMENT) & LCG_MASK;
+    return g_lcg_state;
 }
 
 /* ********************************************** Public functions definitions ******************************************* */
 
-void generate_point(GEOMETRY_point_t *out)
+void point_generator_set_bounds(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y)
 {
-    uint32_t random_number = generate_random_number();
-    integer_to_coordinate(random_number, out);
+    g_min_x = min_x;
+    g_max_x = max_x;
+    g_min_y = min_y;
+    g_max_y = max_y;
+}
+
+void point_generator_reset(void)
+{
+    g_lcg_state = LCG_SEED;
+}
+
+void generate_point(point_t *out)
+{
+    uint32_t x_rand = generate_random_number();
+    uint32_t y_rand = generate_random_number();
+    out->x = (distance_t)((int32_t)(x_rand % (uint32_t)(g_max_x - g_min_x + 1)) + g_min_x);
+    out->y = (distance_t)((int32_t)(y_rand % (uint32_t)(g_max_y - g_min_y + 1)) + g_min_y);
 }
 
 /* ***************************************** Public callback functions definitions *************************************** */

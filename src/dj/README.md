@@ -1,139 +1,148 @@
 # DJ
 
 ## Introduction
-DJ est un algorithme permettant au robot de se déplacer en évitant des obstacles.
+DJ est un algorithme de planification de trajectoire permettant à un robot de se déplacer en évitant des obstacles.
 
 Ces obstacles peuvent être statiques comme des zones interdites, des éléments de jeu, des murs, etc., ou dynamiques comme des robots adverses.
 
+DJ ne pilote pas directement le robot : il **génère un ou plusieurs chemins** (une suite de points) vers une ou plusieurs destinations. C'est ensuite au code appelant (la propulsion du robot) de suivre ces chemins. DJ est conçu comme un moteur réutilisable et indépendant du robot : tous les paramètres propres au robot (rayon, propulsion, etc.) lui sont fournis à l'exécution.
+
 ## Utilisation
+Toute l'API publique de DJ passe par le **moteur** `dj_engine_t`, défini dans [`dj_engine.h`](dj_engine.h).
+
+### Initialiser le moteur
+Avant toute utilisation, initialisez un `dj_engine_t` avec `dj_engine_init`. Vous lui fournissez :
+- le **rayon du robot** (en millimètres) ;
+- un éventuel **polygone de workspace restreint** (`restricted_workspace_polygon`) qui limite la zone de construction du graphe ;
+- un **callback de calcul de durée** (`duration_calculator`) qui estime la durée d'un chemin à partir des caractéristiques de propulsion ;
+- un **callback de position d'obstacle dynamique** (`get_dynamic_obstacle_position`) qui convertit un obstacle dynamique en positions statiques dans l'espace-temps ;
+- un **callback générateur d'arguments** appelé avant chaque génération de chemin.
+
+Le fait que le calcul de durée et la conversion des obstacles dynamiques soient des callbacks permet de découpler DJ d'un modèle de propulsion particulier.
+
 ### Faire un déplacement
-Pour faire un déplacement, il faut appeler la fonction `dj_try_going` dans le fichier [`dj.h`](dj.h). Cette fonction a la même interface qu'un `try_going` classique.
+Pour générer un chemin, appelez `dj_engine_generate_path`. Vous lui passez :
+- les **propriétés de propulsion** (`dj_engine_propulsion_properties_t`, initialisées via `dj_engine_init_propulsion_properties`) : position et vitesse de départ, vitesses et accélérations max, condition de fin entre deux points, etc. ;
+- un **tableau de destinations** (`dj_goal_point_t`), chacune pouvant imposer un angle d'arrivée ;
+- le **type de solveur** à utiliser (`DJ_SOLVER_DIJKSTRA` ou `DJ_SOLVER_ASTAR`) ;
+- un drapeau `retry_without_dynamic_obstacle`.
 
-Attention, si le point de destination du déplacement est dans l'aire d'un obstacle statique, le robot s'y déplacera. Autrement dit, si l'utilisateur souhaite explicitement aller dans une zone interdite, c'est possible.
+La fonction remplit un tableau de chemins (un par destination) et un tableau de booléens indiquant quelles destinations ont été atteintes.
 
-Si aucun chemin n'est trouvé à cause d'un obstacle dynamique qui bloque le chemin, l'algorithme ignorera cet obstacle dynamique dans son calcul. Cela signifie que le robot se déplacera comme si l'obstacle dynamique n'était pas là. Cela risque de déclencher un évitement.
+**Multi-destinations :** une seule génération peut viser plusieurs destinations à la fois. C'est plus efficace que d'appeler la fonction plusieurs fois, car Dijkstra/A\* explorent naturellement le graphe « en éventail » depuis la source : une seule exécution trouve les chemins vers toutes les destinations accessibles sans recalcul redondant. Le nombre maximum de destinations est fixé par `DJ_ENGINE_MAX_DESTINATIONS`.
+
+Attention, si le point de destination est dans l'aire d'un obstacle statique, le robot s'y déplacera quand même. Autrement dit, si l'utilisateur souhaite explicitement aller dans une zone interdite, c'est possible.
+
+Si aucun chemin n'est trouvé à cause d'un obstacle dynamique qui bloque le passage et que `retry_without_dynamic_obstacle` est activé, l'algorithme relance le calcul en ignorant les obstacles dynamiques. Le robot se déplacera alors comme si l'obstacle dynamique n'était pas là, ce qui risque de déclencher un évitement géré par la propulsion.
 
 ### Activer / désactiver des obstacles
-Pour activer ou désactiver un obstacle, il faut appeler les fonctions `dj_enable_static_polygon` et `dj_enable_dynamic_polygon` dans le fichier [`dj.h`](dj.h).
-On peut aussi savoir si un obstacle est actif ou non en appelant les fonctions `dj_is_static_polygon_enabled` et `dj_is_dynamic_polygon_enabled`.
+Pour activer ou désactiver un obstacle, appelez `dj_engine_enable_static_obstacle` ou `dj_engine_enable_dynamic_obstacle`.
+On peut savoir si un obstacle est actif en appelant `dj_engine_is_static_obstacle_enabled` ou `dj_engine_is_dynamic_obstacle_enabled`.
 
 ### Ajouter des obstacles
-Chaque obstacle a un ID unique. Cet ID est utilisé pour savoir de quel obstacle on parle lorsqu'on interagit avec l'algorithme DJ.
+Chaque obstacle reçoit un **ID unique** (`dj_static_obstacle_id_t` / `dj_dynamic_obstacle_id_t`, des `int32_t`) au moment de l'import. Cet ID sert à désigner l'obstacle dans toutes les interactions ultérieures avec DJ.
 
-#### Ajouter un obstacle statique ou dynamique de manière statique
-##### ID d'obstacle par défaut
-Vous pouvez ajouter des ID par défaut dans le fichier [`dj_obstacle_importer/dj_obstacle_id.h`](dj_obstacle_importer/dj_obstacle_id.h). Ajoutez simplement une nouvelle ligne dans l'énumération `dj_static_obstacle_id_e` ou `dj_dynamic_obstacle_id_e`.
+#### Obstacle statique
+Importez un obstacle statique avec `dj_engine_import_static_obstacle`. Vous fournissez sa forme (`dj_polygon_t`), son état initial (activé ou non), un **mode d'agrandissement** (voir [Agrandissement des obstacles](#agrandissement-des-obstacles)), une **marge** de sécurité et un **rayon d'extraction douce** (`smooth_extraction_radius`).
+
+> **Attention :** chaque import réserve de la mémoire et un ID unique non libérable. N'importez donc pas trop d'obstacles. Le nombre maximum est borné par `DJ_OBSTACLE_MANAGER_MAX_STATIC_OBSTACLES`.
 
 **Quelques conseils :**
-- Faites des obstacles avec le moins de sommets possible. Cela permet de gagner du temps de calcul, de mémoire et d'obtenir des solutions plus pertinentes. Voir la partie [fonctionnement](##Fonctionnement) pour comprendre pourquoi.
-- Faites des obstacles les plus petits possibles. Cela permet à l'algorithme d'avoir plus de choix de chemins et de trouver des chemins plus rapides.
-- Utilisez l'outil de visualisation de terrain disponible [`ici`](./dj_playground_vizualizer.py) pour vérifier que vos obstacles sont bien placés. Cet outil vous montrera les zones où le centre du robot n'a pas le droit de passer. Vous pouvez aussi voir les chemins possibles pour le robot.
-
-#### Obstacle par défaut
-Pour ajouter un obstacle statique, il faut rajouter un polygone dans le fichier [`dj_obstacle_importer/dj_obstacle_importer.c`](dj_obstacle_importer/dj_obstacle_importer.c).
-Pour cela, rajoutez un appel à la fonction `dj_importer_static_init` ou `dj_importer_dynamic_init` dans la fonction `dj_obstacle_importer_init`.
-Suivez les exemples déjà présents dans le fichier. Attention, les ID des obstacles doivent être ajoutés dans les énumérations `dj_static_obstacle_id_e` ou `dj_dynamic_obstacle_id_e`.
-
-#### Obstacle ajouté durant la partie
-On peut aussi ajouter des obstacles durant la partie. Pour cela, il faut appeler les fonctions `dj_obstacle_importer_import_static_obstacle` ou `dj_obstacle_importer_import_dynamic_obstacle` dans le fichier [`dj_obstacle_importer/dj_obstacle_importer.c`](dj_obstacle_importer/dj_obstacle_importer.c).
-Attention cependant, il faut utiliser ces fonctions avec parcimonie, car elles sont très coûteuses en temps de calcul. On ne peut pas proprement supprimer un obstacle ajouté durant la partie, mais on peut le désactiver. Si vous avez besoin de supprimer un obstacle, désactivez-le simplement. Cela permet de gagner du temps de calcul.
+- Faites des obstacles avec le moins de sommets possible. Cela permet de gagner du temps de calcul, de la mémoire, et d'obtenir des solutions plus pertinentes. Voir la partie [Fonctionnement](#fonctionnement) pour comprendre pourquoi.
+- Faites des obstacles les plus petits possibles. Cela laisse à l'algorithme plus de choix de chemins et permet de trouver des chemins plus rapides.
 
 #### Obstacle dynamique
-Les obstacles dynamiques sont représentés par des polygones qui bougent.
-Lorsqu'on définit un obstacle dynamique, on lui donne une forme qui ne changera pas durant la partie. Cependant, on peut changer sa position, sa vitesse et son accélération. Cette forme, représentée par un polygone, doit impérativement être au mieux centrée autour de l'origine. En effet, la position de cet obstacle sera approximée par un point qui sera l'origine de la forme. Attention on parle uniquement de la forme de l'obstacle ici, en aucun cas de sa position sur le terrain. C'est d'ailleurs ce point que vous devez utiliser lorsque vous définissez la position de l'obstacle dynamique.
+Les obstacles dynamiques sont représentés par des polygones qui bougent. Importez-les avec `dj_engine_import_dynamic_obstacle`.
 
-Pour les obstacles dynamiques, il faut les rafraîchir durant la partie. Pour cela, il faut appeler la fonction `dj_obstacle_importer_refresh_dynamic_obstacle` dans votre code. Lorsque vous rafraîchissez un obstacle dynamique, il faut lui donner une position, une vitesse et une accélération constante.
+Lorsqu'on définit un obstacle dynamique, on lui donne une forme qui ne changera pas durant la partie. En revanche, on peut changer sa position, sa vitesse et son accélération. Cette forme, représentée par un polygone, doit impérativement être au mieux **centrée autour de l'origine**. En effet, la position de l'obstacle est approximée par un point qui est l'origine de la forme. On parle ici uniquement de la forme de l'obstacle, en aucun cas de sa position sur le terrain. C'est d'ailleurs ce point que vous utiliserez pour définir la position de l'obstacle dynamique.
 
-Les obstacles dynamiques ont une durée de vie. En effet, il est impensable qu'un obstacle dynamique n'ait changé de direction, de vitesse ou d'accélération depuis un certain temps. De plus, les obstacles dynamiques sont approximés avec une accélération constante, mais en réalité, ce n'est pas toujours le cas. Pour ces raisons, les obstacles dynamiques ont une durée de vie.
-Cette durée de vie est définie dans le fichier [`dj_obstacle/dj_obstacle_dynamic`](dj_obstacle/dj_obstacle_dynamic) par la constante `OBSTACLE_LIFETIME_MS`. Tout cela implique que vous devez rafraîchir les obstacles dynamiques régulièrement.
+Après l'import, l'obstacle n'a encore ni position, ni vitesse, ni accélération : vous devez le **rafraîchir**. Pour cela, appelez `dj_engine_refresh_dynamic_obstacle` régulièrement durant la partie, en lui donnant une position, une vitesse et une accélération constante (la vitesse et l'accélération doivent être colinéaires).
+
+Les obstacles dynamiques ont une **durée de vie**. En effet, il est peu réaliste qu'un obstacle dynamique n'ait pas changé de direction, de vitesse ou d'accélération depuis un certain temps ; de plus, l'approximation à accélération constante n'est pas toujours valable. Pour ces raisons, vous devez rafraîchir les obstacles dynamiques régulièrement.
+
+On ne peut pas proprement supprimer un obstacle ajouté durant la partie, mais on peut le **désactiver**. Si vous avez besoin de « supprimer » un obstacle, désactivez-le simplement.
+
+### Agrandissement des obstacles
+L'utilisateur définit un obstacle comme la zone où **aucune partie du robot** ne doit pénétrer. Or, DJ raisonne sur le **centre** du robot. Les obstacles sont donc agrandis (« oversize ») d'environ un rayon de robot pour représenter les zones interdites au centre du robot. Voir [`dj_oversize_obstacle.h`](dj_obstacle/dj_oversize_obstacle.h).
+
+Le **mode d'agrandissement** (`dj_obstacle_oversize_mode_t`) contrôle la finesse de l'arrondi des coins :
+- `DJ_OBSTACLE_OVERSIZE_MODE_1_POINT` à `..._4_POINTS` : 1 à 4 points ajoutés par coin (plus de points = arrondi plus fidèle, mais plus de sommets dans le graphe) ;
+- `DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE` : l'angle entre les deux points est volontairement petit pour forcer la propulsion à utiliser des rotations `END_AT_BRAKE` ;
+- `DJ_OBSTACLE_OVERSIZE_MODE_NO_OVERSIZE` : pas d'agrandissement.
+
+`DJ_DEFAULT_OVERSIZE_MODE` donne le mode à utiliser par défaut. Le nombre de points d'un polygone après agrandissement reste borné par `DJ_POLYGON_MAX_POINTS` : prévoyez un peu de marge selon le mode choisi.
 
 ## Configuration
-Le fichier de configuration de DJ est le fichier [`dj_config.h`](dj_config.h). Ce fichier contient toutes les constantes de configuration de DJ.
-### Paramètres de configuration
-- `DJ_ROBOT_WIDTH` : Largeur du robot. À régler en fonction de la largeur réelle du robot, éléments compris.
-- `DJ_ROBOT_FRONT_BORDER_DISTANCE` : Distance entre le centre du robot et le bord avant du robot. À régler en fonction de la distance réelle, éléments compris.
-- `DJ_ROBOT_BACK_BORDER_DISTANCE` : Distance entre le centre du robot et le bord arrière du robot. À régler en fonction de la distance réelle, éléments compris.
-- `ROBOT_MARGIN` : Marge de sécurité à ajouter autour du robot.
+Le fichier de configuration principal de DJ est [`dj_config.h`](dj_config.h). Quelques constantes additionnelles vivent dans les modules concernés.
 
-- `DJ_GRAPH_GRAPH_MAX_NODES` : Nombre maximum de sommets dans le graphe. À régler en fonction du nombre d'obstacles et de leur complexité. Prendre un peu de marge mais éviter de prendre trop de RAM.
-- `DJ_GRAPH_GRAPH_AVERAGE_LINKS` : Nombre moyen de liens par sommet. À régler en fonction du nombre d'obstacles et de leur complexité. Prendre un peu de marge mais éviter de prendre trop de RAM.
+### `dj_config.h`
+- `DJ_GRAPH_GRAPH_MAX_NODES` : nombre maximum de sommets dans le graphe. À régler en fonction du nombre d'obstacles et de leur complexité. Prendre un peu de marge mais éviter de consommer trop de RAM.
+- `DJ_GRAPH_GRAPH_AVERAGE_LINKS` : nombre moyen de liens par sommet. Même logique de réglage.
+- `DJ_GRAPH_GRAPH_MAX_PATH_LENGHT` : nombre maximum de points dans un chemin.
+- `DJ_GRAPH_GRAPH_MAX_PATHS` : nombre maximum de chemins générés/explorés.
+- `DJ_GRAPH_NODE_MAX_ADJACENCY` : nombre maximum de liens adjacents par sommet.
+- `DJ_ENGINE_MAX_DESTINATIONS` : nombre maximum de destinations lors d'une génération multi-destinations.
+- `DJ_POLYGON_MAX_POINTS` : nombre maximum de points dans un polygone. À régler selon le nombre de points de vos obstacles et le mode d'agrandissement utilisé.
+- `DJ_ENABLE_REBUILD_OPTIMIZATION` : active (1) ou désactive (0) l'optimisation de la reconstruction du graphe. Cette optimisation consiste à ne pas ajouter les sommets des obstacles dynamiques : elle fait gagner un temps de calcul conséquent, mais le robot ne se déplace alors que le long des obstacles statiques. À désactiver, par exemple, si vous voulez utiliser uniquement des obstacles dynamiques.
 
-- `DJ_ENABLE_DEBUG_LOGS` : Activer ou désactiver les logs de débogage de DJ.
-- `DJ_ENABLE_BUILD_GRAPH_DEBUG_LOGS` : Activer ou désactiver les logs de débogage de la construction du graphe.
-- `DJ_ENABLE_REBUILD_GRAPH_DEBUG_LOGS` : Activer ou désactiver les logs de débogage de la reconstruction du graphe.
+### `dj_obstacle_importer.h`
+- `DJ_OBSTACLE_MANAGER_MAX_STATIC_OBSTACLES` : nombre maximum d'obstacles statiques importés.
+- `DJ_OBSTACLE_MANAGER_MAX_DYNAMIC_OBSTACLES` : nombre maximum d'obstacles dynamiques importés.
 
-- `DJ_ENABLE_REBUILD_OPTIMIZATION` : Macro à commenter pour désactiver l'optimisation de la reconstruction du graphe. Cette optimisation vise à ne pas lier les positions calculées des adversaires dans l'espace-temps. Cela permet de gagner un temps conséquent de calcul, mais les performances sont donc moins importantes. Cette optimisation a pour conséquence que le robot se déplace uniquement le long des obstacles statiques. Cette optimisation est par exemple à désactiver si l'on veut utiliser uniquement des obstacles dynamiques.
-
-- `ENABLE_RECALCULATION` : Active ou non le recalcul du chemin pendant un déplacement.
-- `ENABLE_RETRY` : Active ou non la réessai du chemin si le robot ne trouve pas de chemin ou s'il y a un évitement.
-- `MAX_RETRIES` : Nombre maximum de réessais du chemin si le robot ne trouve pas de chemin ou s'il y a un évitement.
-- `DJ_TIMEOUT_MS` : Timeout pour le déplacement. Si le robot n'atteint pas le point de destination dans ce délai, une erreur est retournée. Ce délai est en millisecondes.
-- `TOO_SHORT_DISTANCE` : Distance minimale entre chaque point de la trajectoire. Si la distance entre deux points est inférieure à cette valeur, le deuxième point est ignoré. Cela permet de ne pas demander de choses trop bizarres à la propulsion. Cette valeur est en millimètres.
-- `OBSTACLE_LIFETIME_MS` : Durée de vie d'un obstacle dynamique après son rafraîchissement. Cette valeur est en millisecondes.
-- `DJ_OBSTACLE_MANAGER_MAX_IMPORTED_OBSTACLES` : Nombre maximum d'obstacles importés. À régler en fonction du nombre d'obstacles dynamiques que vous avez. Prendre un peu de marge mais éviter de prendre trop de RAM.
-- `DJ_POLYGON_MAX_POINTS` : Nombre maximum de points dans un polygone. À régler en fonction du nombre de points que vous avez dans vos obstacles. Prendre un peu de marge suivant le type d'agrandissement que vous utilisez (voir [ici](./dj_obstacle_importer/dj_obstacle_importer.c)).
-
-## Portage
-En cas de portage de DJ, voici la liste des fichiers à modifier :
-- [Le fichier de configuration](dj_config.h) : il faut adapter les constantes et les configurations à votre robot.
-- [Le fichier de dépendances](./dj_dependencies/dj_dependencies.c) et son [.h](./dj_dependencies/dj_dependencies.h) : il faut adapter les dépendances à votre environnement.
-- Quelques fichiers de la QS (QS_maths..., QS_magic_array, QS_macros).
-- [Le fichier de la MAE principale](./dj_launcher/dj_try_going.c).
+### Choix du solveur
+Le solveur n'est plus une constante de configuration : il est choisi **à chaque appel** de `dj_engine_generate_path` via le paramètre `dj_solver_type_t` (`DJ_SOLVER_DIJKSTRA` ou `DJ_SOLVER_ASTAR`). Voir [`dj_solver_common.h`](dj_solver/dj_solver_common/dj_solver_common.h).
 
 ## Fonctionnement
 Cette section explique le fonctionnement de l'algorithme DJ.
 
 ### Informations générales
-DJ ne cherche pas le chemin le plus court mais le chemin le plus rapide. Pour cela, il émule la propulsion du robot en considérant qu'elle est parfaite. Cela signifie que le robot se déplace avec une accélération constante. Il prend en compte les `END_AT_BRAKE` et les `END_AT_LAST_POINT` lors de ses calculs.
+DJ ne cherche pas le chemin le plus court mais le chemin le **plus rapide**. Pour cela, il émule la propulsion du robot en la considérant parfaite : le robot se déplace avec une accélération constante. La durée d'un chemin est estimée par le callback `duration_calculator` fourni au moteur, qui prend en compte la condition de fin entre points (par exemple `END_AT_BRAKE` ou `END_AT_LAST_POINT`).
 
-DJ fonctionne sur un principe de graphe. Chaque sommet du graphe est une position possible du centre du robot. Chaque arête du graphe représente un déplacement possible du robot.
+DJ fonctionne sur un principe de **graphe**. Chaque sommet du graphe est une position possible du centre du robot. Chaque arête représente un déplacement possible.
 
-### Création du graphe
+### Graphe pré-construit
+Pour gagner du temps, DJ maintient un **graphe pré-construit** (`prebuilt_graph`) à partir des seuls obstacles statiques. Ce graphe n'est calculé qu'une fois et réutilisé à chaque génération de chemin. Il doit être recalculé lorsque des obstacles sont ajoutés ou retirés ; cela se fait automatiquement au besoin, mais peut aussi être forcé avec `dj_engine_force_recalculate_prebuilt_graph` (le recalcul étant coûteux, on évite de le déclencher au mauvais moment).
+
 #### Sommets
-Pour créer le graphe, DJ commence par créer ses sommets. Pour cela, il prend chaque obstacle et crée un sommet pour chaque point du polygone. Comme indiqué précédemment, les obstacles sont agrandis de façon à représenter les zones où le centre du robot n'a pas le droit de passer. Les points de départ et d'arrivée sont également ajoutés.
+Pour construire le graphe, DJ crée un sommet pour chaque point de chaque obstacle. Comme indiqué plus haut, les obstacles sont agrandis pour représenter les zones interdites au centre du robot. Les points de départ et d'arrivée sont également ajoutés.
 
 #### Liens
-Ensuite, DJ crée les liens entre les sommets. Pour cela, il prend chaque sommet et détermine quels autres sommets sont accessibles depuis celui-ci sans passer par un obstacle. Il crée un lien entre ces sommets. Il crée aussi des liens sur les arêtes des obstacles, permettant ainsi au robot de longer ces derniers. Cependant, il ne crée pas de liens sur les diagonales des obstacles, ce qui empêche le robot de traverser les obstacles.
+Ensuite, DJ crée les liens entre les sommets. Pour chaque sommet, il détermine quels autres sommets sont accessibles sans traverser un obstacle, et crée un lien. Il crée aussi des liens le long des arêtes des obstacles, permettant au robot de les longer. En revanche, il ne crée pas de liens sur les diagonales des obstacles, ce qui empêche le robot de les traverser.
 
 ### Calcul du chemin
-**Prérequis** : être familier avec des algorithmes de recherche de chemin comme Dijkstra ou A*.
+**Prérequis** : être familier avec des algorithmes de recherche de chemin comme Dijkstra ou A\*.
 
-DJ utilise un algorithme de recherche de chemin classique pour trouver le chemin le plus rapide. Cependant, à chaque sommet exploré lors de la résolution de l'algorithme, DJ "reconstruit" une partie du graphe.
+DJ utilise un algorithme de recherche de chemin classique pour trouver le chemin le plus rapide. Cependant, à chaque sommet exploré lors de la résolution, DJ « reconstruit » une partie du graphe pour tenir compte des obstacles dynamiques.
 
 #### Reconstruire le graphe
-Lors de la précédente construction du graphe, DJ a créé des sommets et des liens à partir uniquement des obstacles statiques. Maintenant, il doit prendre en compte les obstacles dynamiques. Pour cela, il convertit les obstacles dynamiques en obstacles statiques selon l'endroit depuis lequel on les observe.
+Le graphe pré-construit ne contient que les obstacles statiques. Pour prendre en compte les obstacles dynamiques, DJ les convertit en obstacles statiques selon l'endroit (et l'instant) depuis lequel on les observe. C'est le rôle du *rebuilder* ([`dj_graph_rebuilder.h`](dj_graph_builder/dj_graph_rebuilder.h)).
 
 ##### Désactiver les liens
-Les liens qui passent par un obstacle dynamique sont désactivés. Cela signifie que le robot ne peut pas passer par ces liens. Cela permet d'éviter les obstacles dynamiques.
+Les liens qui passent par un obstacle dynamique sont désactivés : le robot ne peut donc pas les emprunter, ce qui permet d'éviter l'obstacle.
 
 ##### Conversion des obstacles dynamiques en obstacles statiques
-Pour convertir un obstacle dynamique en obstacle statique, DJ considère la position de l'obstacle dynamique dans l'espace-temps depuis la position du sommet où se trouve l'algorithme. Plus simplement, il calcule les positions où le robot pourrait croiser le centre de l'obstacle dynamique en suivant les chemins les plus directs.
+Pour convertir un obstacle dynamique en obstacle statique, DJ considère sa position dans l'**espace-temps** depuis la position du sommet où se trouve l'algorithme. Plus simplement, il calcule les positions où le robot pourrait croiser le centre de l'obstacle dynamique en suivant les chemins les plus directs.
 
-Cela signifie qu'un obstacle dynamique peut avoir plusieurs positions statiques (jusqu'à 8 au maximum, en prenant en compte des cas avec `END_AT_BRAKE` ou `END_AT_LAST_POINT`). Pour le détail des mathématiques, voir la partie [mathématiques](##Mathématiques). En pratique, il est rare qu'un obstacle dynamique ait plus de 2 positions statiques.
+Un obstacle dynamique peut donc avoir plusieurs positions statiques (jusqu'à 8 au maximum, en prenant en compte les cas avec `END_AT_BRAKE` ou `END_AT_LAST_POINT`). Pour le détail, voir la partie [Mathématiques](#mathématiques). En pratique, il est rare qu'un obstacle dynamique ait plus de 2 positions statiques. Ces positions sont ajoutées au graphe comme des obstacles statiques.
 
-Ces positions statiques sont ajoutées au graphe de la même manière que les obstacles statiques.
+#### Pondération et durée
+Pour estimer la durée d'un déplacement, DJ prend en compte les conditions de fin (`END_AT_BRAKE`, `END_AT_LAST_POINT`). Il est donc impossible de pondérer directement chaque arête, car la durée dépend de l'ensemble du chemin. DJ calcule donc la durée d'un chemin entier.
 
-
-#### Calcul du chemin
-Pour estimer la durée d'un déplacement, DJ prend en compte les `END_AT_BRAKE` et les `END_AT_LAST_POINT`. Cela signifie qu'il est impossible de pondérer directement les arêtes du graphe, car la durée d'un déplacement dépend de l'ensemble du chemin. DJ calcule donc la durée d'un chemin entier.
-
-Une fois ces informations en place, DJ peut utiliser un algorithme de recherche de chemin classique pour trouver le chemin le plus rapide.
-
-Deux algorithmes sont disponibles dans DJ : **Dijkstra** et **A***.
+Deux algorithmes sont disponibles : **Dijkstra** et **A\***.
 
 **Avantages et inconvénients :**
-- Dijkstra offre des solutions plus pertinentes qu'A*. A* est efficace pour des graphes très grands et denses, mais ce n'est pas le cas ici. De plus, A* est optimal lorsque la pondération des arêtes est liée aux distances entre les sommets, ce qui n'est pas le cas ici. En effet, le robot accélère ou freine quasiment tout le temps. Cela joue en faveur de une pondération basée sur la durée des déplacements.
-- A* est moins coûteux en temps de calcul que Dijkstra.
+- Dijkstra offre des solutions plus pertinentes qu'A\*. A\* est efficace pour des graphes très grands et denses, ce qui n'est pas le cas ici. De plus, A\* est optimal lorsque la pondération des arêtes est liée aux distances entre sommets, ce qui n'est pas le cas ici : le robot accélère ou freine quasiment tout le temps, ce qui plaide pour une pondération basée sur la durée des déplacements.
+- A\* est moins coûteux en temps de calcul que Dijkstra.
 
-Il est possible de changer l'algorithme utilisé en modifiant la constante `DJ_SOLVER_TYPE` dans le fichier [`dj_solver/dj_solver.h`](dj_solver/dj_solver.h).
+Le solveur est choisi à chaque appel via le paramètre `dj_solver_type_t` (voir [Choix du solveur](#choix-du-solveur)).
 
 ### Conclusion
-Une fois le chemin le plus rapide déterminé, il ne reste plus qu'à le suivre. La dernière étape est une gestion classique par MAE (Machine à États). Le chemin est recalculé de temps en temps. Si un évitement est déclenché, DJ recommence le calcul du chemin dans une limite de X tentatives. Pour plus de détails, voir [`dj_try_going`](./dj_launcher/dj_try_going.c).
+Une fois le ou les chemins les plus rapides déterminés, DJ a terminé son travail : il renvoie les chemins au code appelant. Le suivi du chemin, le recalcul périodique et la gestion des évitements relèvent de la propulsion du robot, en dehors de DJ. Le seul mécanisme de réessai intégré à DJ est le `retry_without_dynamic_obstacle`, qui relance le calcul sans les obstacles dynamiques lorsqu'aucun chemin n'est trouvé. Pour plus de détails sur l'enchaînement, voir [`dj_launcher.c`](dj_launcher/dj_launcher.c).
 
 ## Mathématiques
 ### Conversion des obstacles dynamiques en obstacles statiques
-On peut retrouver l'application de ces mathématiques dans le fichier [`dj_obstacle/dj_obstacle_dynamic.c`](dj_obstacle/dj_obstacle_dynamic.c).
-Si vous n'avez pas d'editeur LaTeX, vous pouvez utiliser ce fichier mais il est recommandé d'utiliser un éditeur LaTeX pour une meilleure lisibilité.
+On peut retrouver l'application de ces mathématiques dans le fichier [`dj_obstacle_dynamic.c`](dj_obstacle/dj_obstacle_dynamic.c).
+Si vous n'avez pas d'éditeur LaTeX, vous pouvez utiliser ce fichier, mais il est recommandé d'utiliser un éditeur LaTeX pour une meilleure lisibilité.
 #### Rappel
 
 Le but est de déterminer la position de l'obstacle dans l'espace-temps depuis la position du robot.
@@ -200,7 +209,7 @@ $$
 D_{\text{adv}} = \sqrt{(P_{\text{advx}} - P_{\text{robix}})^2 + (P_{\text{advy}} - P_{\text{robiy}})^2}
 $$
 $$
-\iff D_{\text{adv}} = \sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2}
+\iff D_{\text{adv}} = \sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advy}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2}
 $$
 
 ---
@@ -214,81 +223,16 @@ $$
 
 Donc lorsque :
 $$
-\sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2} = V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2
+\sqrt{\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advy}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2} = V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2
 $$
 
-Ce qui donne :
-$$
-\Big(P_{\text{advix}} + V_{\text{advix}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robix}}\Big)^2 + \Big(P_{\text{adviy}} + V_{\text{adviy}} \cdot (t - t_{\text{adv}}) + \frac{1}{2} \cdot A_{\text{advx}} \cdot (t - t_{\text{adv}})^2 - P_{\text{robiy}}\Big)^2 = \Big(V_{\text{rob}} \cdot (t - t_{\text{rob}}) + \frac{1}{2} \cdot A_{\text{rob}} \cdot (t - t_{\text{rob}})^2\Big)^2
-$$
-
-Soit :
-$$
-0 = \left(\frac{A_{\text{advx}}^2}{2} - \frac{A_{\text{rob}}^2}{4}\right) t^4
-+ \left(A_{\text{advx}}(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) + A_{\text{advx}}(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) - A_{\text{rob}}(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}})\right) t^3
-$$
-$$
-+ \Bigg(\left(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}\right)^2
-+ \left(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}\right)^2
-- \left(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}}\right)^2
-$$
-$$
-+ A_{\text{advx}} \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)
-+ A_{\text{advx}} \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)
-$$
-$$
-+ A_{\text{rob}} \cdot \left(V_{\text{robi}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)\Bigg) t^2
-$$
-$$
-+ \Bigg(2 \cdot \left(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}\right) \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)
-$$
-$$
-+ 2 \cdot \left(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}\right) \cdot \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)
-$$
-$$
-+ 2 \cdot \left(V_{\text{robi}} - A_{\text{rob}} \cdot t_{\text{rob}}\right) \cdot \left(V_{\text{robi}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)\Bigg) t
-$$
-$$
-+ \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}}\right)^2
-+ \left(\frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}}\right)^2
-$$
-$$
-- \left(V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2}\right)^2
-$$
-
-
-L'équation est un peu longue mais résumons-la :
-Elle est de la forme
+En élevant au carré, on obtient une équation polynomiale en $t$ de degré 4, de la forme :
 $$
 0 = a \cdot t^4 + b \cdot t^3 + c \cdot t^2 + d \cdot t + e
 $$
 
-
-##### Coefficients de l'équation
-- $a = \frac{A_{\text{advx}}^2}{2} - \frac{A_{\text{rob}}^2}{4}$
-- $b = A_{\text{advx}}(V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) + A_{\text{advx}}(V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) - A_{\text{rob}}(V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}})$
-- $c = \big((V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}})^2 + (V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}})^2 - (V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}})^2 \big)$
-  $+ A_{\text{advx}} \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)$
-  $+ A_{\text{advx}} \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)$
-  $+ A_{\text{rob}} \cdot \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)$
-
-- $d = 2 \cdot (V_{\text{advix}} - A_{\text{advx}} \cdot t_{\text{adv}}) \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)$
-  $+ 2 \cdot (V_{\text{adviy}} - A_{\text{advx}} \cdot t_{\text{adv}}) \cdot \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)$
-  $+ 2 \cdot (V_{\text{rob}} - A_{\text{rob}} \cdot t_{\text{rob}}) \cdot \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)$
-
-- $e = \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{advix}} \cdot t_{\text{adv}} + P_{\text{advix}} - P_{\text{robix}} \big)^2$
-  $+ \big( \frac{A_{\text{advx}} \cdot t_{\text{adv}}^2}{2} - V_{\text{adviy}} \cdot t_{\text{adv}} + P_{\text{adviy}} - P_{\text{robiy}} \big)^2$
-  $- \big( V_{\text{rob}} \cdot t_{\text{rob}} - \frac{A_{\text{rob}} \cdot t_{\text{rob}}^2}{2} \big)^2$
-
-
 ##### Résolution numérique
-Cette équation est une équation du quatrième degré, donc il y a de 0 à 4 solutions.
-Les solutions générales sont complexes, donc on ne calculera pas la forme générale.
-
-Pour rappel, on cherche les racines du polynôme :
-$$
-a \cdot t^4 + b \cdot t^3 + c \cdot t^2 + d \cdot t + e
-$$
+Cette équation du quatrième degré a donc de 0 à 4 solutions. Les solutions générales étant complexes, on ne calcule pas la forme analytique.
 
 On a l'avantage de pouvoir limiter les solutions à un intervalle de temps $[0, t_{\text{max}}]$.
 En effet, il n'a aucun sens de chercher une solution négative ou supérieure à $t_{\text{max}}$.
@@ -299,29 +243,17 @@ De plus, $t_{\text{max}}$ est relativement petit, car :
 
 ###### Méthode de recherche des solutions
 Pour tout $t \in [0, t_{\text{max}}]$, on calcule la valeur de l'équation et on regarde si elle est de signe opposé à la précédente.
-Si c'est le cas, alors il y a une solution entre \(t\) et \(t - 1\).
+Si c'est le cas, alors il y a une solution entre $t$ et $t - 1$.
 
 ###### Calcul de la position de l'obstacle pour chaque solution
-Pour chaque solution trouvée \(t\), on calcule la position de l'obstacle :
+Pour chaque solution trouvée $t$, on calcule la position de l'obstacle :
 $$
 P_{\text{advx}} = P_{\text{advix}} + V_{\text{advix}} \cdot t + \frac{1}{2} \cdot A_{\text{advx}} \cdot t^2
 $$
 $$
-P_{\text{advy}} = P_{\text{adviy}} + V_{\text{adviy}} \cdot t + \frac{1}{2} \cdot A_{\text{advx}} \cdot t^2
+P_{\text{advy}} = P_{\text{adviy}} + V_{\text{adviy}} \cdot t + \frac{1}{2} \cdot A_{\text{advy}} \cdot t^2
 $$
-avec \(t\) la solution trouvée.
-
+avec $t$ la solution trouvée.
 
 ##### Conclusion
 On obtient aucune, une ou plusieurs positions possibles de l'obstacle dans l'espace-temps.
-
-
-## TODO
-
-Les tâches à effectuer pour améliorer DJ :
-
-- [ ] Gérer les obstacles dynamiques qui changent de forme.
-- [ ] Prendre en compte la pré-rotation du robot avant la première translation.
-- [ ] Prendre en compte le dernier déplacement en fonction de son type (`END_AT_BRAKE` ou `END_AT_LAST_POINT`).
-- [ ] Implémenter une interaction avec le système de propulsion pour demander les coefficients de propulsion et éviter la redondance de code. Cela permettrait également de gérer les changements d'accélération pendant le match.
-- [ ] Fixer [ce bug](.\dj_obstacle\dj_obstacle_dynamic.c).

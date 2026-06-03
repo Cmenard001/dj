@@ -1,0 +1,54 @@
+{
+    "name": "dj Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    // Forward SSH agent so remote deployment (scp/ssh to stm32mp1.local) works
+    "remoteEnv": {
+        "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}"
+    },
+    // Create host-side directories required by mounts before container starts
+    "initializeCommand": "mkdir -p .build-cache && mkdir -p ~/.ssh && chmod 700 ~/.ssh",
+    "mounts": [
+        // Persist CMake build cache between container rebuilds (bind mount keeps host user ownership)
+        "source=${localWorkspaceFolder}/.build-cache,target=/workspace/build,type=bind,consistency=cached",
+        // Mount SSH config + known_hosts for remote deployment
+        "source=${localEnv:HOME}/.ssh,target=/home/dev/.ssh,type=bind,readonly"
+    ],
+    // VS Code extensions installed inside the container
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // C/C++ language support & IntelliSense
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                // CMake integration
+                "ms-vscode.cmake-tools",
+                // ARM Cortex-M / STM32 debugging (cortex-debug)
+                "marus25.cortex-debug",
+                // Python scripts support
+                "ms-python.python",
+                // Hex file viewer (useful for firmware)
+                "ms-vscode.hexeditor",
+                // Git integration
+                "eamodio.gitlens",
+                "mhutchie.git-graph"
+            ],
+            "settings": {
+                "cmake.configureOnOpen": true,
+                "cmake.preferredGenerators": [
+                    "Ninja"
+                ],
+                "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+                "cmake.testPreset": "tests",
+                "cmake.ctest.allowParallelJobs": true,
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "C_Cpp.intelliSenseEngine": "default"
+            }
+        }
+    },
+    "remoteUser": "dev"
+}

@@ -4,553 +4,591 @@
  * @author Cyprien Ménard
  * @date 12/2024
  * @see dj_obsacle_importer.h
+ *
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
 
 #include "dj_obstacle_importer.h"
-
-#include "../dj_dependencies/dj_dependencies.h"
-#include "../dj_graph_builder/dj_prebuilt_graph.h"
-#include "../dj_logs/dj_logs.h"
-#include "../dj_obstacle/dj_obstacle_dynamic.h"
-#include "../dj_obstacle/dj_obstacle_static.h"
-#include "../dj_obstacle/dj_oversize_obstacle.h"
-#include "../dj_obstacle/dj_polygon.h"
-#include "dj_obstacle_id.h"
-
+#include "hmi/strategy/hmi_strategy.h"
+#include "hmi/strategy/hmi_strategy.pb.h"
+#include "system/assert/system_assert.h"
+#include "system/log/log.h"
+#include "utils/dj/dj_obstacle/dj_obstacle_dynamic.h"
+#include "utils/dj/dj_obstacle/dj_obstacle_static.h"
+#include "utils/dj/dj_obstacle/dj_oversize_obstacle.h"
+#include "utils/dj/dj_obstacle/dj_polygon.h"
+#include "utils/dj/dj_obstacle_importer/dj_obstacle_id.h"
+#include "utils/macros/macros.h"
+#include "utils/shape/shape.h"
+#include "utils/time/time.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+LOG_REGISTER("utils/dj/obstacle_importer");
 
 /* **************************************************** Private macros *************************************************** */
-
-#define START_END_AREA_SIZE (450)
-#define PAMI_START_AREA_BIG_SIZE (450)
-#define PAMI_START_AREA_SMALL_SIZE (150)
-#define COLUMN_BIG_SIZE (400)
-#define COLUMN_SMALL_SIZE (100)
-#define BUILDING_AREA_BIG_SIZE (450)
-#define BUILDING_AREA_SMALL_SIZE (150)
-#define BUILDING_AREA_TOO_LITTLE_SIZE (350)
 
 /**
  * @brief Size we consider that have adversarial robot
  * @note This size if from the center of the robot (our)
  * @note Unit : mm
  */
-#define ADV_ROBOT_SIZE (250)
+#define ADV_ROBOT_SIZE              (250)
 
-#define CREATE_START_END_AREA_OBSTACLE(x, y)                                                                                \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + START_END_AREA_SIZE)},                                               \
-                                       {x + START_END_AREA_SIZE, COLOR_Y(y + START_END_AREA_SIZE)},                         \
-                                       {x + START_END_AREA_SIZE, COLOR_Y(y)})
-
-#define CREATE_BUILDING_AREA_TOO_LITTLE_OBSTACLE(x, y)                                                                      \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + START_END_AREA_SIZE)},                                               \
-                                       {x + BUILDING_AREA_TOO_LITTLE_SIZE, COLOR_Y(y + START_END_AREA_SIZE)},               \
-                                       {x + BUILDING_AREA_TOO_LITTLE_SIZE, COLOR_Y(y)})
-
-#define CREATE_PAMI_START_AREA_OBSTACLE_VERTICAL(x, y)                                                                      \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + PAMI_START_AREA_SMALL_SIZE)},                                        \
-                                       {x + PAMI_START_AREA_BIG_SIZE, COLOR_Y(y + PAMI_START_AREA_SMALL_SIZE)},             \
-                                       {x + PAMI_START_AREA_BIG_SIZE, COLOR_Y(y)})
-
-#define CREATE_SMALL_BUILDING_AREA_OBSTACLE_HORIZONTAL(x, y)                                                                \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + BUILDING_AREA_BIG_SIZE)},                                            \
-                                       {x + BUILDING_AREA_SMALL_SIZE, COLOR_Y(y + BUILDING_AREA_BIG_SIZE)},                 \
-                                       {x + BUILDING_AREA_SMALL_SIZE, COLOR_Y(y)})
-
-#define CREATE_COLUMN_OBSTACLE_VERTICAL(x, y)                                                                               \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + COLUMN_SMALL_SIZE)},                                                 \
-                                       {x + COLUMN_BIG_SIZE, COLOR_Y(y + COLUMN_SMALL_SIZE)},                               \
-                                       {x + COLUMN_BIG_SIZE, COLOR_Y(y)})
-
-#define CREATE_COLUMN_OBSTACLE_HORIZONTAL(x, y)                                                                             \
-    (dj_polygon_t *)&DJ_CREATE_POLYGON({x, COLOR_Y(y)},                                                                     \
-                                       {x, COLOR_Y(y + COLUMN_BIG_SIZE)},                                                   \
-                                       {x + COLUMN_SMALL_SIZE, COLOR_Y(y + COLUMN_BIG_SIZE)},                               \
-                                       {x + COLUMN_SMALL_SIZE, COLOR_Y(y)})
-
-/*
- * @brief Margin used when their is not enough space to oversize with DJ_DEFAULT_MARGIN margin
+/**
+ * @brief Period to display obstacles (in ms)
  */
-#define SMALL_MARGIN (0)
+#define DISPLAY_OBSTACLES_PERIOD_MS (1000)
 
 /* ************************************************ Private type definition ********************************************** */
 
-MAGIC_ARRAY_TYPEDEF(dynamic_obstacles_list, dj_obstacle_dynamic_t, 5);
-
-static void dj_importer_static_init(
-    dj_static_obstacle_id_e id, dj_polygon_t *polygon, bool is_enabled, dj_obsrtacle_oversize_mode_e mode, uint8_t margin);
-static void dj_importer_dynamic_init(dj_dynamic_obstacle_id_e id, dj_polygon_t *polygon, bool is_enabled);
-static uint32_t dj_importer_get_static_obstacle_index(dj_static_obstacle_id_e id);
-static uint32_t dj_importer_get_dynamic_obstacle_index(dj_dynamic_obstacle_id_e id);
+static void dj_importer_static_init(dj_obstacle_importer_t *importer,
+                                    dj_static_obstacle_id_t id,
+                                    dj_polygon_t *polygon,
+                                    bool is_enabled,
+                                    dj_obstacle_oversize_mode_t mode,
+                                    distance_t oversize_distance,
+                                    distance_t smooth_extraction_radius);
+static void dj_importer_dynamic_init(dj_obstacle_importer_t *importer,
+                                     dj_dynamic_obstacle_id_t id,
+                                     dj_polygon_t *polygon,
+                                     dj_obstacle_oversize_mode_t mode,
+                                     distance_t oversize_distance,
+                                     bool is_enabled,
+                                     dj_obstacle_dynamic_get_position_cb_t get_position,
+                                     void *get_position_args);
+static uint32_t dj_importer_get_static_obstacle_index(const dj_obstacle_importer_t *importer,
+                                                      dj_static_obstacle_id_t id);
+static uint32_t dj_importer_get_dynamic_obstacle_index(const dj_obstacle_importer_t *importer,
+                                                       dj_dynamic_obstacle_id_t id);
+static void dj_obstacle_display_callback(hmi_strategy_input_id_t input_id,
+                                         hmi_strategy_event_type_t event_type,
+                                         void *args);
+static void dj_obstacle_display(dj_obstacle_importer_t *importer);
 
 /* ********************************************* Private functions declarations ****************************************** */
 
+MAGIC_ARRAY_DECLARATION(dynamic_obstacles_list, dj_obstacle_dynamic_t);
+
 /* ************************************************** Private variables ************************************************** */
-
-/**
- * @brief List of static obstacles
- */
-static static_obstacles_list_t static_obstacles;
-
-/**
- * @brief List of dynamic obstacles
- */
-static dynamic_obstacles_list_t dynamic_obstacles;
-
-/**
- * @brief Enable or disable the dynamic obstacles
- * @see dj_obstacle_importer_enable_dynamic_obstacles
- */
-static bool dynamic_obstacles_enabled = true;
 
 /* ********************************************** Private functions definitions ****************************************** */
 
-MAGIC_ARRAY_SRC(dynamic_obstacles_list, dj_obstacle_dynamic_t)
+MAGIC_ARRAY_DEFINITION(dynamic_obstacles_list, dj_obstacle_dynamic_t)
+
+/**
+ * @brief Generate a color based on an ID using HSV to RGB conversion
+ * @param id The obstacle ID
+ * @return RGB color as uint32_t (0xRRGGBB)
+ */
+static uint32_t dj_importer_generate_color(uint32_t id)
+{
+    // Use golden ratio to generate well-distributed hues
+    const float golden_ratio = 0.618033988749895f;
+    float hue = fmodf((float)id * golden_ratio, 1.0f);
+
+    // Fixed saturation and value for vibrant colors
+    float saturation = 0.8f;
+    float value = 0.9f;
+
+    // HSV to RGB conversion
+    float h = hue * 6.0f;
+    int i = (int)h;
+    float f = h - (float)i;
+    float p = value * (1.0f - saturation);
+    float q = value * (1.0f - f * saturation);
+    float t = value * (1.0f - (1.0f - f) * saturation);
+
+    float r, g, b;
+    switch (i % 6)
+    {
+        case 0:
+            r = value;
+            g = t;
+            b = p;
+            break;
+        case 1:
+            r = q;
+            g = value;
+            b = p;
+            break;
+        case 2:
+            r = p;
+            g = value;
+            b = t;
+            break;
+        case 3:
+            r = p;
+            g = q;
+            b = value;
+            break;
+        case 4:
+            r = t;
+            g = p;
+            b = value;
+            break;
+        default:
+            r = value;
+            g = p;
+            b = q;
+            break;
+    }
+
+    uint8_t red = (uint8_t)(r * 255.0f);
+    uint8_t green = (uint8_t)(g * 255.0f);
+    uint8_t blue = (uint8_t)(b * 255.0f);
+
+    return ((uint32_t)red << 16) | ((uint32_t)green << 8) | (uint32_t)blue;
+}
 
 /**
  * @brief Function to initialize an obstacle
- *
+ * @param importer Pointer to the obstacle importer structure
  * @param id ID of the obstacle
  * @param polygon Shape of the obstacle
  * @param is_enabled true if the obstacle is enabled, false otherwise
  * @param mode Oversize mode
- * @param margin Margin to take into account in millimeters
+ * @param oversize_distance Distance to oversize the obstacle
+ * @param smooth_extraction_radius Radius for smooth extraction (mm)
  */
-static void dj_importer_static_init(
-    dj_static_obstacle_id_e id, dj_polygon_t *polygon, bool is_enabled, dj_obsrtacle_oversize_mode_e mode, uint8_t margin)
+static void dj_importer_static_init(dj_obstacle_importer_t *importer,
+                                    dj_static_obstacle_id_t id,
+                                    dj_polygon_t *polygon,
+                                    bool is_enabled,
+                                    dj_obstacle_oversize_mode_t mode,
+                                    distance_t oversize_distance,
+                                    distance_t smooth_extraction_radius)
 {
-    dj_control_non_null(polygon, )
-        // Oversize the obstacle
-        dj_oversize_obstacle(polygon, mode, margin);
+    SYSTEM_ASSERT(polygon != NULL);
+    // Oversize the obstacle
+    dj_oversize_obstacle(polygon, mode, oversize_distance);
     // Add the obstacle to the list
-    dj_obstacle_static_t *new_obstacle = static_obstacles_list_add(&static_obstacles, NULL);
-    dj_control_non_null(new_obstacle, ) dj_obstacle_static_init(new_obstacle, polygon, id, is_enabled);
-    dj_debug_printf("Obstacle %d added, points : ", id);
-    for (uint8_t i = 0; i < polygon->nb_points; i++)
+    dj_obstacle_static_t *new_obstacle =
+        static_obstacles_list_add(&importer->static_obstacles, NULL);
+    SYSTEM_ASSERT(new_obstacle != NULL);
+    dj_obstacle_static_init(new_obstacle, polygon, id, smooth_extraction_radius, is_enabled);
+    LOGD("Obstacle %d added, points : ", id);
+    for (uint32_t i = 0; i < polygon->nb_points; i++)
     {
-        dj_debug_printf("(%d, %d) ", polygon->points[i].x, polygon->points[i].y);
+        LOGD("(%f, %f) ", polygon->points[i].x, polygon->points[i].y);
     }
-    dj_debug_printf("\n");
+    LOGD("");
 }
 
 /**
  * @brief Function to initialize an obstacle
  * @warning Please take a lot of margin for the dynamic obstacles
- *
+ * @param importer Pointer to the obstacle importer structure
  * @param id ID of the obstacle
  * @param polygon Shape of the obstacle
+ * @param mode Oversize mode
+ * @param oversize_distance Distance to oversize the obstacle
  * @param is_enabled true if the obstacle is enabled, false otherwise
  */
-static void dj_importer_dynamic_init(dj_dynamic_obstacle_id_e id, dj_polygon_t *polygon, bool is_enabled)
+static void dj_importer_dynamic_init(dj_obstacle_importer_t *importer,
+                                     dj_dynamic_obstacle_id_t id,
+                                     dj_polygon_t *polygon,
+                                     dj_obstacle_oversize_mode_t mode,
+                                     distance_t oversize_distance,
+                                     bool is_enabled,
+                                     dj_obstacle_dynamic_get_position_cb_t get_position,
+                                     void *get_position_args)
 {
-    dj_control_non_null(polygon, )
-        // Oversize the obstacle
-        dj_oversize_obstacle(polygon, DJ_OBSRTACLE_OVERSIZE_MODE_1_POINT, 0);
-    dj_obstacle_dynamic_t *new_obstacle = dynamic_obstacles_list_add(&dynamic_obstacles, NULL);
-    dj_control_non_null(new_obstacle, ) dj_obstacle_dynamic_init(new_obstacle,
-                                                                 polygon,
-                                                                 &(GEOMETRY_point_t){-10000, -10000},
-                                                                 &(GEOMETRY_vector_t){0, 0},
-                                                                 &(GEOMETRY_vector_t){0, 0},
-                                                                 id,
-                                                                 is_enabled);
+    SYSTEM_ASSERT(polygon != NULL);
+    // Oversize the obstacle
+    dj_oversize_obstacle(polygon, mode, oversize_distance);
+    dj_obstacle_dynamic_t *new_obstacle =
+        dynamic_obstacles_list_add(&importer->dynamic_obstacles, NULL);
+    SYSTEM_ASSERT(new_obstacle != NULL);
+    dj_obstacle_dynamic_init(new_obstacle,
+                             get_position,
+                             get_position_args,
+                             polygon,
+                             &(point_t){10000, 10000},
+                             &(linear_speed_2d_vector_t){0, 0},
+                             &(linear_acceleration_2d_vector_t){0, 0},
+                             id,
+                             is_enabled);
 }
 
 /**
  * @brief Function to get the index of a static obstacle in the list
- *
  * @param id ID of the obstacle
  * @return Index of the obstacle in the list
  */
-static uint32_t dj_importer_get_static_obstacle_index(dj_static_obstacle_id_e id)
+static uint32_t dj_importer_get_static_obstacle_index(const dj_obstacle_importer_t *importer,
+                                                      dj_static_obstacle_id_t id)
 {
-    for (uint32_t i = 0; i < static_obstacles_list_size(&static_obstacles); i++)
+    for (uint32_t i = 0; i < static_obstacles_list_size(&importer->static_obstacles); i++)
     {
-        dj_obstacle_static_t *obstacle = static_obstacles_list_get(&static_obstacles, i);
-        dj_control_non_null(obstacle, -1);
-        if (obstacle->m_id == id)
+        dj_obstacle_static_t *obstacle = static_obstacles_list_get(&importer->static_obstacles, i);
+        SYSTEM_ASSERT(obstacle != NULL);
+        if (obstacle->id == id)
         {
             return i;
         }
     }
-    return -1;
+    return (uint32_t)-1;
 }
 
 /**
  * @brief Function to get the index of a dynamic obstacle in the list
- *
+ * @param importer Pointer to the obstacle importer structure
  * @param id ID of the obstacle
  * @return Index of the obstacle in the list
  */
-static uint32_t dj_importer_get_dynamic_obstacle_index(dj_dynamic_obstacle_id_e id)
+static uint32_t dj_importer_get_dynamic_obstacle_index(const dj_obstacle_importer_t *importer,
+                                                       dj_dynamic_obstacle_id_t id)
 {
-    for (uint32_t i = 0; i < dynamic_obstacles_list_size(&dynamic_obstacles); i++)
+    for (uint32_t i = 0; i < dynamic_obstacles_list_size(&importer->dynamic_obstacles); i++)
     {
-        dj_obstacle_dynamic_t *obstacle = dynamic_obstacles_list_get(&dynamic_obstacles, i);
-        dj_control_non_null(obstacle, -1);
-        if (obstacle->m_id == id)
+        dj_obstacle_dynamic_t *obstacle =
+            dynamic_obstacles_list_get(&importer->dynamic_obstacles, i);
+        SYSTEM_ASSERT(obstacle != NULL);
+        if (obstacle->id == id)
         {
             return i;
         }
     }
-    return -1;
+    return (uint32_t)-1;
+}
+
+/**
+ * @brief Callback function for the HMI strategy input event to display or hide static obstacles
+ * @param input_id ID of the input that triggered the event
+ * @param event_type Type of the event (typically ON or OFF)
+ * @param args Pointer to the obstacle importer structure
+ */
+static void dj_obstacle_display_callback(hmi_strategy_input_id_t input_id,
+                                         hmi_strategy_event_type_t event_type,
+                                         void *args)
+{
+    UNUSED(input_id);
+
+    SYSTEM_ASSERT(args != NULL);
+    dj_obstacle_importer_t *importer = (dj_obstacle_importer_t *)args;
+
+    bool display = (event_type == HMI_STRATEGY_EVENT_TYPE_ON);
+    importer->is_displaying_obstacles = display;
+    dj_obstacle_display(importer);
+}
+
+/**
+ * @brief Function to display or hide static obstacles on the HMI
+ * @param importer Pointer to the obstacle importer structure
+ */
+static void dj_obstacle_display(dj_obstacle_importer_t *importer)
+{
+    SYSTEM_ASSERT(importer != NULL);
+    if (importer->is_displaying_obstacles)
+    {
+        LOGI("DJ Static Obstacles Display enabled");
+        // Initialize shape handles
+        for (uint32_t i = 0; i < DJ_OBSTACLE_MANAGER_MAX_STATIC_OBSTACLES; i++)
+        {
+            if (importer->static_obstacle_shapes[i] == NULL)
+            {
+                importer->static_obstacle_shapes[i] = shape_new();
+            }
+        }
+
+        for (uint32_t i = 0; i < static_obstacles_list_size(&importer->static_obstacles); i++)
+        {
+            dj_obstacle_static_t *obstacle =
+                static_obstacles_list_get(&importer->static_obstacles, i);
+            SYSTEM_ASSERT(obstacle != NULL);
+            dj_polygon_t *polygon = &obstacle->shape;
+
+            shape_handle_t shape = importer->static_obstacle_shapes[i];
+            SYSTEM_ASSERT(shape != NULL);
+
+            // Generate unique color for this obstacle based on its ID
+            uint32_t color = dj_importer_generate_color((uint32_t)obstacle->id);
+            // Black outline if enabled, same color if disabled
+            uint32_t outline_color = obstacle->is_enabled ? 0x000000 : color;
+            shape_set_outline(shape, outline_color, 5.0f);
+            shape_set_fill(shape, color);                       // Colored fill
+            float opacity = obstacle->is_enabled ? 0.4f : 0.1f; // More transparent if disabled
+            shape_set_opacity(shape, opacity);
+
+            // Set label
+            char label[64];
+            snprintf(label, sizeof(label), "Static %ld", (long)obstacle->id);
+            shape_set_label(shape, label);
+
+            // Draw polygon
+            if (polygon->nb_points > 0)
+            {
+                shape_draw_polygon(shape, polygon->points, polygon->nb_points, true);
+            }
+        }
+    }
+    else
+    {
+        LOGD("DJ Static Obstacles Display disabled");
+        // Clear shapes
+        for (uint32_t i = 0; i < DJ_OBSTACLE_MANAGER_MAX_STATIC_OBSTACLES; i++)
+        {
+            if (importer->static_obstacle_shapes[i] != NULL)
+            {
+                shape_free(importer->static_obstacle_shapes[i]);
+                importer->static_obstacle_shapes[i] = NULL;
+            }
+        }
+    }
 }
 
 /* *********************************************** Public functions declarations ***************************************** */
 
-void dj_obstacle_importer_init()
+MAGIC_ARRAY_DEFINITION(static_obstacles_list, dj_obstacle_static_t);
+
+void dj_obstacle_importer_init(dj_obstacle_importer_t *importer)
 {
-    dynamic_obstacles_enabled = true;
-    static_obstacles_list_init(&static_obstacles);
-    dynamic_obstacles_list_init(&dynamic_obstacles);
+    SYSTEM_ASSERT(importer != NULL);
+    importer->dynamic_obstacles_enabled = true;
+    static_obstacles_list_init(&importer->static_obstacles);
+    dynamic_obstacles_list_init(&importer->dynamic_obstacles);
+    dj_obstacle_id_generator_init(&importer->id_generator);
+
+    hmi_strategy_register_input_event_callback(
+        HMI_STRATEGY_INPUT_ID_SWITCH_DJ_STATIC_OBSTACLES_DISPLAY,
+        HMI_STRATEGY_EVENT_TYPE_ALL,
+        dj_obstacle_display_callback,
+        importer);
 }
 
-void dj_obstacle_import_default_obstacles()
+dj_static_obstacle_id_t dj_obstacle_importer_import_static_obstacle(
+    dj_obstacle_importer_t *importer,
+    dj_polygon_t *shape,
+    bool is_enabled,
+    dj_obstacle_oversize_mode_t mode,
+    distance_t oversize_distance,
+    distance_t smooth_extraction_radius)
 {
-    /*
-        Initialisation des obstacles statiques
-        Attention :
-            L'ordre des points est important pour former un polygone fermé
-
-        Exemple d'initialisation d'un obstacle statique en forme de carré de 100mm de côté en (0, 0)
-        dj_importer_static_init(STATIC_OBSTACLE_EXEMPLE,
-                &DJ_CREATE_POLYGON(
-                    {0   , COLOR_Y(0  )},     // Points 1 of the polygon
-                    {0   , COLOR_Y(100)},     // Points 2 of the polygon
-                    {100 , COLOR_Y(100)},     // Points 3 of the polygon
-                    {100 , COLOR_Y(0  )}),    // Points 4 of the polygon
-                true,                         // Obstacle enabled
-                DJ_DEFAULT_OVERSIZE_MODE,     // Oversize mode
-                DJ_DEFAULT_MARGIN);           // Margin
-    */
-
-    /*
-        Start / end area + building area
-        1) Big square :
-            Start / end area
-            Building area 1 & 2
-        2) Small rectangle :
-            Building area 3 & 4
-    */
-    dj_importer_static_init(STATIC_OBSTACLE_START_END_AREA_ADV,
-                            CREATE_START_END_AREA_OBSTACLE(0, 2400),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_OUR_1,
-                            CREATE_BUILDING_AREA_TOO_LITTLE_OBSTACLE(900, 2550),
-                            false,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            SMALL_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_ADV_1,
-                            CREATE_BUILDING_AREA_TOO_LITTLE_OBSTACLE(900, 0),
-                            false,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            SMALL_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_OUR_2,
-                            CREATE_START_END_AREA_OBSTACLE(1550, 1000),
-                            false,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            SMALL_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_ADV_2,
-                            CREATE_START_END_AREA_OBSTACLE(1550, 1550),
-                            false,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            SMALL_MARGIN);
-
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_OUR_3,
-                            CREATE_SMALL_BUILDING_AREA_OBSTACLE_HORIZONTAL(1850, 550),
-                            false,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_ADV_3,
-                            CREATE_SMALL_BUILDING_AREA_OBSTACLE_HORIZONTAL(1850, 2005),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_OUR_4,
-                            CREATE_SMALL_BUILDING_AREA_OBSTACLE_HORIZONTAL(1850, 2550),
-                            false,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_BUILDING_AREA_ADV_4,
-                            CREATE_SMALL_BUILDING_AREA_OBSTACLE_HORIZONTAL(1850, 0),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-
-    /* Obstacles columns storage */
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_1,
-                            CREATE_COLUMN_OBSTACLE_VERTICAL(475, 25),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_2,
-                            CREATE_COLUMN_OBSTACLE_VERTICAL(1400, 25),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_3,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(225, 625),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_4,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(1700, 575),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_5,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(1000, 900),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_6,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(1000, 1700),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_7,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(225, 1975),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_8,
-                            CREATE_COLUMN_OBSTACLE_HORIZONTAL(1700, 2025),
-                            true,
-                            DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_9,
-                            CREATE_COLUMN_OBSTACLE_VERTICAL(475, 2875),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_COLUMN_10,
-                            CREATE_COLUMN_OBSTACLE_VERTICAL(1400, 2875),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-
-    /* Obstacles PAMI start area */
-    dj_importer_static_init(STATIC_OBSTACLE_PAMI_START_AREA_OUR,
-                            CREATE_PAMI_START_AREA_OBSTACLE_VERTICAL(0, 0),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-    dj_importer_static_init(STATIC_OBSTACLE_PAMI_START_AREA_ADV,
-                            CREATE_PAMI_START_AREA_OBSTACLE_VERTICAL(0, 2850),
-                            true,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-
-    /* Obstacle platform */
+    SYSTEM_ASSERT(importer != NULL);
+    SYSTEM_ASSERT(shape != NULL);
+    // Create a unique ID for the obstacle and import it
+    dj_static_obstacle_id_t id =
+        dj_obstacle_id_generate_static_obstacle_id(&importer->id_generator);
     dj_importer_static_init(
-        STATIC_OBSTACLE_PLATFORM,
-        (dj_polygon_t *)&DJ_CREATE_POLYGON(
-            {0, 650}, {200, 650}, {200, 1050}, {450, 1050}, {450, 1950}, {200, 1950}, {200, 2350}, {0, 2350}),
-        true,
-        DJ_DEFAULT_OVERSIZE_MODE,
-        DJ_DEFAULT_MARGIN);
+        importer, id, shape, is_enabled, mode, oversize_distance, smooth_extraction_radius);
 
-    /* Obstacles PAMI trajectories areas */
-    dj_importer_static_init(
-        STATIC_OBSTACLE_PAMI_START_TRAJECTORY_AREA,
-        (dj_polygon_t *)&DJ_CREATE_POLYGON({0, COLOR_Y(0)}, {0, COLOR_Y(800)}, {600, COLOR_Y(800)}, {600, COLOR_Y(0)}),
-        false,
-        DJ_DEFAULT_OVERSIZE_MODE,
-        DJ_DEFAULT_MARGIN);
+    // Update the display of obstacles on the HMI
+    dj_obstacle_display(importer);
 
-    dj_importer_static_init(STATIC_OBSTACLE_PAMI_END_TRAJECTORY_AREA,
-                            (dj_polygon_t *)&DJ_CREATE_POLYGON({0, COLOR_Y(1000)},
-                                                               {0, COLOR_Y(3000)},
-                                                               {900, COLOR_Y(3000)},
-                                                               {900, COLOR_Y(2550)},
-                                                               {1000, COLOR_Y(2100)},
-                                                               {1000, COLOR_Y(1000)}),
-                            false,
-                            DJ_DEFAULT_OVERSIZE_MODE,
-                            DJ_DEFAULT_MARGIN);
-
-    /*
-        Initialisation des obstacles dynamiques
-        Attention :
-            L'ordre des points est important pour former un polygone fermé
-            !!! Le polygon doit être centré sur le point (0, 0) au mieux en (0, 0) !!!
-            (ça ne fonctionnera pas du tout sinon)
-
-        Exemple d'initialisation d'un obstacle dynamique en forme de carré de 100mm de côté
-        dj_importer_dynamic_init(DYNAMIC_OBSTACLE_EXEMPLE,
-                &DJ_CREATE_POLYGON(
-                    {-50, -50},   // Points 1 of the polygon
-                    {-50,  50},   // Points 2 of the polygon
-                    { 50,  50},   // Points 3 of the polygon
-                    { 50, -50}),  // Points 4 of the polygon
-                true);            // Obstacle enabled
-    */
-
-    // dj_importer_dynamic_init(DYNAMIC_OBSTACLE_ADV_ROBOT,
-    //                          (dj_polygon_t *)&DJ_CREATE_POLYGON({-ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE},
-    //                                                             {-ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
-    //                                                             {ADV_ROBOT_SIZE, ADV_ROBOT_SIZE},
-    //                                                             {ADV_ROBOT_SIZE, -ADV_ROBOT_SIZE}),
-    //                          true);
-}
-
-void dj_obstacle_importer_deinit()
-{
-    // Deinitialize the obstacles
-    for (uint32_t i = 0; i < static_obstacles_list_size(&static_obstacles); i++)
-    {
-        dj_obstacle_static_t *obstacle = static_obstacles_list_get(&static_obstacles, i);
-        dj_control_non_null(obstacle, ) dj_obstacle_static_deinit(obstacle);
-    }
-    for (uint32_t i = 0; i < dynamic_obstacles_list_size(&dynamic_obstacles); i++)
-    {
-        dj_obstacle_dynamic_t *obstacle
-            = dynamic_obstacles_list_get(&dynamic_obstacles, dj_importer_get_dynamic_obstacle_index(i));
-        dj_control_non_null(obstacle, ) dj_obstacle_dynamic_deinit(obstacle);
-    }
-}
-
-dj_static_obstacle_id_e dj_obstacle_importer_import_static_obstacle(dj_polygon_t *shape,
-                                                                    bool is_enabled,
-                                                                    dj_obsrtacle_oversize_mode_e mode,
-                                                                    uint8_t margin)
-{
-    dj_control_non_null(shape, -1)
-        // Create a unique ID for the obstacle and import it
-        dj_static_obstacle_id_e id
-        = dj_obstacle_id_generate_static_obstacle_id();
-    dj_importer_static_init(id, shape, is_enabled, mode, margin);
-    // Recalculate the prebuilt graph
-    dj_prebuilt_graph_deinit();
-    dj_prebuilt_graph_init();
     return id;
 }
 
-dj_dynamic_obstacle_id_e dj_obstacle_importer_import_dynamic_obstacle(dj_polygon_t *initial_shape, bool is_enabled)
+dj_dynamic_obstacle_id_t dj_obstacle_importer_import_dynamic_obstacle(
+    dj_obstacle_importer_t *importer,
+    dj_polygon_t *initial_shape,
+    dj_obstacle_oversize_mode_t mode,
+    distance_t oversize_distance,
+    bool is_enabled,
+    dj_obstacle_dynamic_get_position_cb_t get_position)
 {
-    dj_control_non_null(initial_shape, -1)
-        // Create a unique ID for the obstacle and import it
-        dj_dynamic_obstacle_id_e id
-        = dj_obstacle_id_generate_dynamic_obstacle_id();
-    dj_importer_dynamic_init(id, initial_shape, is_enabled);
+    SYSTEM_ASSERT(importer != NULL);
+    SYSTEM_ASSERT(initial_shape != NULL);
+    // Create a unique ID for the obstacle and import it
+    dj_dynamic_obstacle_id_t id =
+        dj_obstacle_id_generate_dynamic_obstacle_id(&importer->id_generator);
+    dj_importer_dynamic_init(
+        importer, id, initial_shape, mode, oversize_distance, is_enabled, get_position, NULL);
     return id;
 }
 
-void dj_obstacle_importer_refresh_dynamic_obstacle(dj_dynamic_obstacle_id_e obstacle_id,
-                                                   GEOMETRY_vector_t *acceleration,
-                                                   GEOMETRY_vector_t *initial_speed,
-                                                   GEOMETRY_point_t *initial_position)
+void dj_obstacle_importer_set_dynamic_obstacle_position_args(dj_obstacle_importer_t *importer,
+                                                             void *args)
 {
-    dj_control_non_null(acceleration, ) dj_control_non_null(initial_speed, ) dj_control_non_null(initial_position, )
-
-        // Refresh the position of the dynamic obstacle
-        if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count())
+    SYSTEM_ASSERT(importer != NULL);
+    // Set the additional arguments for dynamic obstacle position calculation
+    for (uint32_t i = 0; i < dynamic_obstacles_list_size(&importer->dynamic_obstacles); i++)
     {
-        dj_error_printf("Invalid obstacle id");
-        return;
+        dj_obstacle_dynamic_t *obstacle =
+            dynamic_obstacles_list_get(&importer->dynamic_obstacles, i);
+        SYSTEM_ASSERT(obstacle != NULL);
+        obstacle->get_position_args = args;
     }
-    dj_obstacle_dynamic_t *obstacle
-        = dynamic_obstacles_list_get(&dynamic_obstacles, dj_importer_get_dynamic_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, ) dj_obstacle_dynamic_refresh(obstacle, acceleration, initial_speed, initial_position);
 }
 
-void dj_obstacle_importer_enable_static_obstacle(dj_static_obstacle_id_e obstacle_id, bool enable)
+void dj_obstacle_importer_refresh_dynamic_obstacle(dj_obstacle_importer_t *importer,
+                                                   dj_dynamic_obstacle_id_t obstacle_id,
+                                                   dj_polygon_t *shape,
+                                                   linear_acceleration_2d_vector_t *acceleration,
+                                                   linear_speed_2d_vector_t *initial_speed,
+                                                   point_t *initial_position,
+                                                   distance_t oversize_distance,
+                                                   dj_obstacle_oversize_mode_t mode)
 {
+    SYSTEM_ASSERT(acceleration != NULL);
+    SYSTEM_ASSERT(initial_speed != NULL);
+    SYSTEM_ASSERT(initial_position != NULL);
+
+    // Refresh the position of the dynamic obstacle
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count(&importer->id_generator))
+    {
+        LOGE("Invalid obstacle id");
+        return;
+    }
+    dj_obstacle_dynamic_t *obstacle =
+        dynamic_obstacles_list_get(&importer->dynamic_obstacles,
+                                   dj_importer_get_dynamic_obstacle_index(importer, obstacle_id));
+    SYSTEM_ASSERT(obstacle != NULL);
+    // Oversize the obstacle
+    dj_oversize_obstacle(shape, mode, oversize_distance);
+    dj_obstacle_dynamic_refresh(obstacle, shape, acceleration, initial_speed, initial_position);
+}
+
+void dj_obstacle_importer_enable_static_obstacle(dj_obstacle_importer_t *importer,
+                                                 dj_static_obstacle_id_t obstacle_id,
+                                                 bool enable)
+{
+    SYSTEM_ASSERT(importer != NULL);
     // Enable or disable the obstacle with the id
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_static_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_static_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return;
     }
-    dj_obstacle_static_t *obstacle
-        = static_obstacles_list_get(&static_obstacles, dj_importer_get_static_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, ) obstacle->m_is_enabled = enable;
+    dj_obstacle_static_t *obstacle =
+        static_obstacles_list_get(&importer->static_obstacles,
+                                  dj_importer_get_static_obstacle_index(importer, obstacle_id));
+    SYSTEM_ASSERT(obstacle != NULL);
+    obstacle->is_enabled = enable;
+
+    // Update the display of obstacles on the HMI
+    dj_obstacle_display(importer);
 }
 
-void dj_obstacle_importer_enable_dynamic_obstacle(dj_dynamic_obstacle_id_e obstacle_id, bool enable)
+void dj_obstacle_importer_enable_dynamic_obstacle(dj_obstacle_importer_t *importer,
+                                                  dj_dynamic_obstacle_id_t obstacle_id,
+                                                  bool enable)
 {
+    SYSTEM_ASSERT(importer != NULL);
     // Enable or disable the obstacle with the id
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return;
     }
-    dj_obstacle_dynamic_t *obstacle
-        = dynamic_obstacles_list_get(&dynamic_obstacles, dj_importer_get_dynamic_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, ) obstacle->m_is_enabled = enable;
+    dj_obstacle_dynamic_t *obstacle =
+        dynamic_obstacles_list_get(&importer->dynamic_obstacles,
+                                   dj_importer_get_dynamic_obstacle_index(importer, obstacle_id));
+    SYSTEM_ASSERT(obstacle != NULL);
+    obstacle->is_enabled = enable;
 }
 
-bool dj_obstacle_importer_static_is_enabled(dj_static_obstacle_id_e obstacle_id)
+bool dj_obstacle_importer_static_is_enabled(const dj_obstacle_importer_t *importer,
+                                            dj_static_obstacle_id_t obstacle_id)
 {
+    SYSTEM_ASSERT(importer != NULL);
     // Check if the obstacle with the id is enabled
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_static_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_static_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return false;
     }
-    dj_obstacle_static_t *obstacle
-        = static_obstacles_list_get(&static_obstacles, dj_importer_get_static_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, false) return obstacle->m_is_enabled;
+    dj_obstacle_static_t *obstacle =
+        static_obstacles_list_get(&importer->static_obstacles,
+                                  dj_importer_get_static_obstacle_index(importer, obstacle_id));
+    SYSTEM_ASSERT(obstacle != NULL);
+    return obstacle->is_enabled;
 }
 
-bool dj_obstacle_importer_dynamic_is_enabled(dj_dynamic_obstacle_id_e obstacle_id)
+bool dj_obstacle_importer_dynamic_is_enabled(const dj_obstacle_importer_t *importer,
+                                             dj_dynamic_obstacle_id_t obstacle_id)
 {
+    SYSTEM_ASSERT(importer != NULL);
     // Check if the obstacle with the id is enabled
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return false;
     }
-    dj_obstacle_dynamic_t *obstacle
-        = dynamic_obstacles_list_get(&dynamic_obstacles, dj_importer_get_dynamic_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, false) return obstacle->m_is_enabled;
+    dj_obstacle_dynamic_t *obstacle =
+        dynamic_obstacles_list_get(&importer->dynamic_obstacles,
+                                   dj_importer_get_dynamic_obstacle_index(importer, obstacle_id));
+    SYSTEM_ASSERT(obstacle != NULL);
+    return obstacle->is_enabled;
 }
 
-dj_obstacle_static_t *dj_obstacle_importer_get_static_obstacle(dj_static_obstacle_id_e obstacle_id)
+dj_obstacle_static_t *dj_obstacle_importer_get_static_obstacle(
+    const dj_obstacle_importer_t *importer, dj_static_obstacle_id_t obstacle_id)
 {
     // Get the static obstacle with the id
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_static_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_static_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return NULL;
     }
-    dj_obstacle_static_t *obstacle
-        = static_obstacles_list_get(&static_obstacles, dj_importer_get_static_obstacle_index(obstacle_id));
-    dj_control_non_null(obstacle, NULL) return obstacle;
+
+    uint32_t obstacle_index = dj_importer_get_static_obstacle_index(importer, obstacle_id);
+    if (obstacle_index == (uint32_t)-1)
+    {
+        return NULL;
+    }
+    dj_obstacle_static_t *obstacle =
+        static_obstacles_list_get(&importer->static_obstacles, obstacle_index);
+    return obstacle;
 }
 
-dj_obstacle_dynamic_t *dj_obstacle_importer_get_dynamic_obstacle(dj_dynamic_obstacle_id_e obstacle_id)
+dj_obstacle_dynamic_t *dj_obstacle_importer_get_dynamic_obstacle(
+    const dj_obstacle_importer_t *importer, dj_dynamic_obstacle_id_t obstacle_id)
 {
     // Get the dynamic obstacle with the id
-    if (obstacle_id < 0 || obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count())
+    if (obstacle_id < 0 ||
+        obstacle_id >= dj_obstacle_id_get_dynamic_obstacle_count(&importer->id_generator))
     {
-        dj_error_printf("Invalid obstacle id");
+        LOGE("Invalid obstacle id");
         return NULL;
     }
-    if (!dynamic_obstacles_enabled)
+    if (!importer->dynamic_obstacles_enabled)
     {
         return NULL;
     }
-    return dynamic_obstacles_list_get(&dynamic_obstacles, dj_importer_get_dynamic_obstacle_index(obstacle_id));
+    return dynamic_obstacles_list_get(&importer->dynamic_obstacles,
+                                      dj_importer_get_dynamic_obstacle_index(importer,
+                                                                             obstacle_id));
 }
 
-void dj_obstacle_importer_enable_dynamic_obstacles(bool enable)
+bool dj_obstacle_importer_all_dynamic_null_kinematics(const dj_obstacle_importer_t *importer)
 {
+    SYSTEM_ASSERT(importer != NULL);
+
+    uint32_t nb_dynamic = dynamic_obstacles_list_size(&importer->dynamic_obstacles);
+    for (uint32_t i = 0; i < nb_dynamic; i++)
+    {
+        const dj_obstacle_dynamic_t *obstacle =
+            dynamic_obstacles_list_get(&importer->dynamic_obstacles, i);
+        if (obstacle == NULL)
+        {
+            continue;
+        }
+        if (obstacle->initial_speed.x != 0.0f || obstacle->initial_speed.y != 0.0f ||
+            obstacle->acceleration.x != 0.0f || obstacle->acceleration.y != 0.0f)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void dj_obstacle_importer_enable_dynamic_obstacles(dj_obstacle_importer_t *importer, bool enable)
+{
+    SYSTEM_ASSERT(importer != NULL);
     // Enable or disable all the dynamic obstacles
-    dynamic_obstacles_enabled = enable;
+    importer->dynamic_obstacles_enabled = enable;
 }
 
 /* ******************************************* Public callback functions declarations ************************************ */

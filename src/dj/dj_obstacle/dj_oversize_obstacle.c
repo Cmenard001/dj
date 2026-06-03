@@ -8,23 +8,26 @@
  * @author Cyprien Ménard
  * @date 04/02/2025
  * @see dj_oversize_obstacle.h
+ * @copyright Cecill-C (Cf. LICENCE.txt)
  */
 
 /* ******************************************************* Includes ****************************************************** */
-#include "dj_oversize_obstacle.h"
-#include "../dj_dependencies/dj_dependencies.h"
-#include "../dj_logs/dj_logs.h"
-#include "../dj_prop_config/dj_prop_config.h"
-#include "dj_polygon.h"
-
+#include "utils/dj/dj_obstacle/dj_oversize_obstacle.h"
+#include "propulsion/copilot/copilot_order/copilot_order.h"
+#include "system/assert/system_assert.h"
+#include "system/log/log.h"
+#include "utils/dj/dj_obstacle/dj_polygon.h"
+#include "utils/maths/angle/angle.h"
+#include "utils/maths/position/position.h"
+#include <math.h>
 /* **************************************************** Private macros *************************************************** */
 
+LOG_REGISTER("utils/dj/oversize_obstacle");
+
 /**
- * @brief Oversize size
- * @note Unit : [mm]
- * @note This macro can be used if margin is defined
+ * @brief Maximum angle between two points when oversizing a corner as an end at brake
  */
-#define DJ_OVERSIZE_SIZE (DJ_ROBOT_WIDTH / 2 + margin)
+#define DJ_OBSTACLE_OVERSIZE_MAX_ANGLE_RAD (CPLT_TRAJ_MAX_ANGLE_DIFF_FOR_CONTINUOUS_TRAJ_RAD)
 
 /* ************************************************ Private type definition ********************************************** */
 
@@ -41,17 +44,16 @@
  */
 static void dj_polygon_set_trigonometric_order(dj_polygon_t *polygon)
 {
-    dj_control_non_null(polygon, )
+    SYSTEM_ASSERT(polygon != NULL);
 
-        // First, we need to know if the polygon is in trigonometric order
-        int32_t area
-        = 0;
+    // First, we need to know if the polygon is in trigonometric order
+    float area = 0.0f;
 
     // Compute the area of the polygon
     for (uint16_t i = 0; i < polygon->nb_points; i++)
     {
-        GEOMETRY_point_t point = polygon->points[i];
-        GEOMETRY_point_t next_point = polygon->points[(i + 1) % polygon->nb_points];
+        point_t point = polygon->points[i];
+        point_t next_point = polygon->points[(i + 1) % polygon->nb_points];
         area += (point.x * next_point.y) - (point.y * next_point.x);
     }
 
@@ -62,7 +64,7 @@ static void dj_polygon_set_trigonometric_order(dj_polygon_t *polygon)
         // We need to reverse the order of the points
         for (uint16_t i = 0; i < polygon->nb_points / 2; i++)
         {
-            GEOMETRY_point_t tmp = polygon->points[i];
+            point_t tmp = polygon->points[i];
             polygon->points[i] = polygon->points[polygon->nb_points - i - 1];
             polygon->points[polygon->nb_points - i - 1] = tmp;
         }
@@ -76,87 +78,99 @@ static void dj_polygon_set_trigonometric_order(dj_polygon_t *polygon)
  * @param[out] output_polygon : the polygon with the oversize
  * @param[in] index : the index of the point to oversize
  * @param[in] mode : oversize mode
- * @param[in] margin : margin to take into account in millimeters
+ * @param[in] oversize_distance : distance to take into account in millimeters
  */
 static void oversize_point(dj_polygon_t *original_polygon,
                            dj_polygon_t *output_polygon,
                            uint16_t index,
-                           dj_obsrtacle_oversize_mode_e mode,
-                           uint8_t margin)
+                           dj_obstacle_oversize_mode_t mode,
+                           distance_t oversize_distance)
 {
-    dj_control_non_null(original_polygon, ) dj_control_non_null(output_polygon, )
+    SYSTEM_ASSERT(original_polygon != NULL);
+    SYSTEM_ASSERT(output_polygon != NULL);
 
-        GEOMETRY_point_t point
-        = original_polygon->points[index];
-    GEOMETRY_point_t next_point = original_polygon->points[(index + 1) % original_polygon->nb_points];
-    GEOMETRY_point_t prev_point
-        = original_polygon->points[(index + original_polygon->nb_points - 1) % original_polygon->nb_points];
+    point_t point = original_polygon->points[index];
+    point_t next_point = original_polygon->points[(index + 1) % original_polygon->nb_points];
+    point_t prev_point =
+        original_polygon
+            ->points[(index + original_polygon->nb_points - 1) % original_polygon->nb_points];
 
     // Compute the angle of each segment
-    int16_t angle_next = GEOMETRY_viewing_angle(point.x, point.y, next_point.x, next_point.y);
-    int16_t angle_prev = GEOMETRY_viewing_angle(point.x, point.y, prev_point.x, prev_point.y);
-    int16_t angle_total = GEOMETRY_modulo_angle(angle_next - angle_prev - PI4096);
+    angle_t angle_next, angle_prev;
+    viewing_angle(&point, &next_point, &angle_next);
+    viewing_angle(&point, &prev_point, &angle_prev);
+
+    // Compute the angle between the two segments
+    // We add 2*PI to avoid negative angles
+    // Do not use modulo_angle here because we want the angle to be between 0 and 2*PI
+    // This value is positive due to trigonometric order of the polygon
+    angle_t angle_total = angle_next - angle_prev - PI;
+    while (angle_total < 0)
+    {
+        angle_total += 2.0f * PI;
+    }
 
     // Compute the number of points to add
     uint16_t nb_points = 0;
-    if (angle_total < 0)
+    if (mode == DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE)
     {
-        nb_points = 1;
-        mode = DJ_OBSRTACLE_OVERSIZE_MODE_1_POINT;
-    }
-    else if (mode == DJ_OBSRTACLE_OVERSIZE_MODE_END_AT_BRAKE)
-    {
-#if MIN_ANGLE_PRE_ROTATION_IMMOBILE_RAD
-        nb_points = angle_total / MIN_ANGLE_PRE_ROTATION_IMMOBILE_RAD + 1;
-#else
-        nb_points = 1;
-#endif
+        // Compute the number of points based on the maximum angle
+        // Add 1 to round up
+        nb_points = (uint16_t)(angle_total / DJ_OBSTACLE_OVERSIZE_MAX_ANGLE_RAD) + 1;
     }
     else
     {
         nb_points = (uint16_t)mode;
     }
 
-    // Compute between each point
-    int16_t angle = GEOMETRY_modulo_angle(angle_total) / (nb_points);
+    SYSTEM_ASSERT(nb_points >= 1);
+
+    // Else, we have multiple points to add
+
+    // Compute between each point (positive value)
+    angle_t angle = angle_total / (angle_t)(nb_points);
 
     // Compute the first angle
-    int16_t current_angle = GEOMETRY_modulo_angle(angle_prev + PI4096 / 2 + angle / 2);
+    angle_t current_angle = modulo_angle(angle_prev + PI / 2.0f + angle / 2.0f);
+
+    // Compute the distance between the point and the new point
+    distance_t distance = oversize_distance / cosf(angle / 2.0f);
 
     // Compute all the oversized points
     for (uint16_t point_index = 0; point_index < nb_points; point_index++)
     {
-        // Compute the distance between the point and the new point
-        int16_t distance = DJ_OVERSIZE_SIZE / cos4096(angle / 2);
-
-        // Compute the new point
-        GEOMETRY_point_t new_point;
-        GEOMETRY_calculate_point_from_distance_and_angle(point, current_angle, distance, &new_point);
+        // Compute the new point using position and angle
+        position_t pos = {.point = point, .angle = current_angle};
+        point_t new_point;
+        calculate_point_from_distance_and_position(&pos, distance, &new_point);
 
         // Add the point to the output polygon
         if (output_polygon->nb_points >= DJ_POLYGON_MAX_POINTS)
         {
-            dj_debug_printf("dj polygon error: too many points\n");
+            LOGE("Too many points");
             return;
         }
         output_polygon->points[output_polygon->nb_points] = new_point;
         output_polygon->nb_points++;
 
         // Update the current angle
-        current_angle = GEOMETRY_modulo_angle(current_angle + angle);
+        current_angle = modulo_angle(current_angle + angle);
     }
 }
 
 /* ********************************************** Public functions definitions ******************************************* */
 
-void dj_oversize_obstacle(dj_polygon_t *polygon, dj_obsrtacle_oversize_mode_e mode, uint8_t margin)
+void dj_oversize_obstacle(dj_polygon_t *polygon,
+                          dj_obstacle_oversize_mode_t mode,
+                          distance_t oversize_distance)
 {
-    if (mode == DJ_OBSRTACLE_OVERSIZE_MODE_NO_OVERSIZE)
+    if (mode == DJ_OBSTACLE_OVERSIZE_MODE_NO_OVERSIZE)
     {
         return;
     }
     // Make a copy of the original polygon
-    dj_polygon_t original_polygon = *polygon;
+    dj_polygon_t original_polygon;
+    dj_polygon_copy(&original_polygon, polygon);
     // Output polygon
     // At the beginning, the output polygon is empty
     // The output polygon will be filled with
@@ -170,11 +184,11 @@ void dj_oversize_obstacle(dj_polygon_t *polygon, dj_obsrtacle_oversize_mode_e mo
     for (uint16_t i = 0; i < original_polygon.nb_points; i++)
     {
         // oversize the point
-        oversize_point(&original_polygon, &output_polygon, i, mode, margin);
+        oversize_point(&original_polygon, &output_polygon, i, mode, oversize_distance);
     }
 
     // return the polygon with the oversize
-    *polygon = output_polygon;
+    dj_polygon_copy(polygon, &output_polygon);
 }
 
 /* ***************************************** Public callback functions definitions *************************************** */

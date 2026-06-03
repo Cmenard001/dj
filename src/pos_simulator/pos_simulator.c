@@ -16,18 +16,24 @@
 /* ********************************************* Private functions declarations ****************************************** */
 
 /* ************************************************** Private variables ************************************************** */
-static GEOMETRY_point_t g_robot_position;
+static position_t g_robot_position;
 
 /* ********************************************** Private functions definitions ****************************************** */
 
 /* ********************************************** Public functions definitions ******************************************* */
 
-void pos_simulator_set_position(GEOMETRY_point_t position)
+void pos_simulator_set_position(position_t position)
 {
     g_robot_position = position;
 }
 
-GEOMETRY_point_t pos_simulator_get_position()
+void pos_simulator_set_point(point_t p)
+{
+    g_robot_position.point = p;
+    g_robot_position.angle = 0.0f;
+}
+
+position_t pos_simulator_get_position()
 {
     return g_robot_position;
 }

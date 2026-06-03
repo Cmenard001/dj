@@ -11,7 +11,10 @@
 
 /* ******************************************************* Includes ****************************************************** */
 
-#include "dj/dj_dependencies/QS_maths/QS_maths.h"
+#include "utils/maths/point/point.h"
+
+/* Forward declaration to avoid circular includes */
+struct dj_test_suite_config_s;
 
 /* ***************************************************** Public macros *************************************************** */
 
@@ -22,11 +25,22 @@
  */
 typedef struct
 {
-    GEOMETRY_point_t m_start_point;       /**< Start point of the test */
-    GEOMETRY_point_t m_destination_point; /**< Destination point of the test */
+    point_t m_start_point;       /**< Start point of the test */
+    point_t m_destination_point; /**< Destination point of the test */
 } dj_test_params_t;
 
 /* *********************************************** Public functions declarations ***************************************** */
+
+/**
+ * @brief Initialize the DJ engine. Must be called once before any test.
+ */
+void dj_test_params_engine_init(void);
+
+/**
+ * @brief Set up the engine for a specific test suite (re-initialise + import obstacles).
+ * @param suite Pointer to the suite configuration.
+ */
+void dj_test_params_engine_setup_for_suite(const struct dj_test_suite_config_s *suite);
 
 /**
  * @brief Initialize the test parameters with values.
@@ -34,7 +48,7 @@ typedef struct
  * @param start_point The starting point of the test.
  * @param destination_point The destination point of the test.
  */
-void dj_test_params_init(dj_test_params_t *params, GEOMETRY_point_t start_point, GEOMETRY_point_t destination_point);
+void dj_test_params_init(dj_test_params_t *params, point_t start_point, point_t destination_point);
 
 /**
  * @brief Start a dj test with the given parameters.

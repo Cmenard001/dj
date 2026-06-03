@@ -96,4 +96,14 @@ void dj_test_get_report(dj_test_set_t *test_set, dj_test_report_t *report)
     dj_test_report_add_message(report, l_result);
 }
 
+time_us_t dj_test_set_get_cpu_duration(dj_test_set_t *test_set)
+{
+    time_us_t total_cpu = 0;
+    for (uint16_t i = 0; i < test_set->m_num_tests; i++)
+    {
+        total_cpu += dj_test_get_cpu_duration(&test_set->m_tests[i]);
+    }
+    return total_cpu;
+}
+
 /* ***************************************** Public callback functions definitions *************************************** */

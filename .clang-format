@@ -1,9 +1,22 @@
 ---
 BasedOnStyle: Microsoft
-ColumnLimit: 125
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+ReflowComments: true
+ColumnLimit: 100
 IndentCaseLabels: true
 BinPackArguments: false
 BinPackParameters : false
-BreakBeforeBinaryOperators: All
+# BreakBeforeBinaryOperators: All
 CommentPragmas: '^'
-...
+SortIncludes: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
+PenaltyBreakBeforeFirstCallParameter: 100
+UseTab: Never
+# AlignArrayOfStructures: Left

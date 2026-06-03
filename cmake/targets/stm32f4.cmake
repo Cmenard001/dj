@@ -22,12 +22,14 @@ get_filename_component(OPENOCD_CONFIG tools/stm32f4discovery.cfg ABSOLUTE)
 # add libraries
 add_subdirectory(src/api/stm32f4)
 
-add_sources(
-    api/stm32f4/startup_stm32f40_41xxx.s
-    api/stm32f4/system_stm32f4xx.c
-    api/time/timeStm32f4.c
-    api/stm32f4/syscalls.c
-    api/printf/printfStm32f4.c
+# STM32F4 platform sources (main entry point + startup/system/time/printf implementations)
+set(STM32F4_PLATFORM_SRCS
+    ${SRC_PREFIX}/main.c
+    ${SRC_PREFIX}/api/stm32f4/startup_stm32f40_41xxx.s
+    ${SRC_PREFIX}/api/stm32f4/system_stm32f4xx.c
+    ${SRC_PREFIX}/api/time/timeStm32f4.c
+    ${SRC_PREFIX}/api/stm32f4/syscalls.c
+    ${SRC_PREFIX}/api/printf/printfStm32f4.c
     )
 
 # GCC optimization level: use -O0 in debug build, otherwise -O2
@@ -45,10 +47,10 @@ set(map_file ${PROJECT_NAME}.map)
 set(lss_file ${PROJECT_NAME}.lss)
 set(PROJECT_NAME ${elf_file})
 
-add_executable(${PROJECT_NAME} ${SRCS})
+add_executable(${PROJECT_NAME} ${STM32F4_PLATFORM_SRCS})
 
-# link StdPeriph library to project
-target_link_libraries(${PROJECT_NAME} PUBLIC stm32f4xx m)
+# link core library and StdPeriph library to project
+target_link_libraries(${PROJECT_NAME} PUBLIC dj_core stm32f4xx m)
 
 # set additional for compiler and linker: optimization and generate map file
 set(additional_compiler_flags ${opt_level})

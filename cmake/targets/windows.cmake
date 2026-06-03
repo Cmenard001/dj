@@ -1,15 +1,12 @@
-# Specific windows source files
-add_sources(
-    api/time/timeWindows.c
-    api/printf/printfEmpty.c
-    )
-
-add_executable(${PROJECT_NAME} ${SRCS})
+# Windows executable: main entry point + platform implementations, linked against dj_core
+add_executable(${PROJECT_NAME}
+    ${SRC_PREFIX}/main.c
+    ${SRC_PREFIX}/api/time/timeWindows.c
+    ${SRC_PREFIX}/api/printf/printfEmpty.c
+)
 
 # Enable all warnings
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME}
-    m
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE dj_core m)

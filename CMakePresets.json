@@ -5,6 +5,7 @@
             "name": "default_preset",
             "hidden": true,
             "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
@@ -48,6 +49,30 @@
                 "CMAKE_TOOLCHAIN_FILE": "cmake/STM32MP15-Toolchain.cmake",
                 "TARGET_NAME": "stm32mp15",
                 "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32mp15.cmake"
+            }
+        },
+        {
+            "name": "tests",
+            "displayName": "Linux + unit tests",
+            "inherits": "linux_preset",
+            "binaryDir": "${sourceDir}/build/tests",
+            "cacheVariables": {
+                "DJ_BUILD_TESTS": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "tests",
+            "configurePreset": "tests"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "tests",
+            "configurePreset": "tests",
+            "output": {
+                "outputOnFailure": true
             }
         }
     ]
