@@ -24,8 +24,7 @@ env:
 jobs:
   # ---------------------------------------------------------------------------
   # Build & push the devcontainer image so the other jobs run in the exact same
-  # environment as local development. Cached on the Dockerfile, so it is a no-op
-  # rebuild when the Dockerfile is unchanged.
+  # environment as local development.
   # ---------------------------------------------------------------------------
   image:
     runs-on: ubuntu-latest
@@ -46,8 +45,6 @@ jobs:
           file: .devcontainer/Dockerfile
           push: true
           tags: ${{ env.IMAGE }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   # ---------------------------------------------------------------------------
   # Build the native Linux target and run the GTest unit tests.
