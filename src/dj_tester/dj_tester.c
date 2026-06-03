@@ -61,7 +61,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -74,7 +74,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -87,7 +87,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -100,7 +100,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_DEFAULT_OVERSIZE_MODE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -113,7 +113,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -126,7 +126,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -139,7 +139,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -152,7 +152,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -165,7 +165,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
             {
@@ -178,7 +178,7 @@ static const dj_test_suite_config_t g_suites[] = {
                 ),
                 .is_enabled               = true,
                 .oversize_mode            = DJ_OBSTACLE_OVERSIZE_MODE_END_AT_BRAKE,
-                .margin                   = 150.0f,
+                .margin                   = 10.0f,
                 .smooth_extraction_radius = 50.0f,
             },
         },
