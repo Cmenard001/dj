@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openocd \
     # GDB with multi-arch support (Linux & remote targets)
     gdb-multiarch \
+    # Doxygen + Graphviz for documentation generation (CMake `doxygen` target / CI Pages)
+    doxygen \
+    graphviz \
     # SSH client for remote deployment to STM32MP15
     openssh-client \
     # Python for scripts (encoding_converter.py, dj_playground_vizualizer.py)

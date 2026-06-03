@@ -31,6 +31,13 @@
 void point_generator_set_bounds(int32_t min_x, int32_t max_x, int32_t min_y, int32_t max_y);
 
 /**
+ * @brief Reset the pseudo-random generator back to its initial seed.
+ * @note Lets callers (e.g. unit tests) make point generation reproducible
+ *       independently of how many points were previously generated.
+ */
+void point_generator_reset(void);
+
+/**
  * @brief Generate a "random" point within the current bounds.
  * @param out Pointer to the point structure to fill with the generated point.
  */

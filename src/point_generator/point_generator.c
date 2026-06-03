@@ -42,6 +42,11 @@ static int32_t g_max_x = DEFAULT_MAX_X;
 static int32_t g_min_y = DEFAULT_MIN_Y;
 static int32_t g_max_y = DEFAULT_MAX_Y;
 
+/**
+ * @brief Current LCG state. Fixed initial seed for reproducibility.
+ */
+static uint32_t g_lcg_state = LCG_SEED;
+
 /* ********************************************** Private functions definitions ****************************************** */
 
 /**
@@ -52,9 +57,8 @@ static int32_t g_max_y = DEFAULT_MAX_Y;
 static uint32_t generate_random_number()
 {
     // Deterministic pseudo-random generator (LCG)
-    static uint32_t state = LCG_SEED; // Fixed seed for reproducibility
-    state = (LCG_MULTIPLIER * state + LCG_INCREMENT) & LCG_MASK;
-    return state;
+    g_lcg_state = (LCG_MULTIPLIER * g_lcg_state + LCG_INCREMENT) & LCG_MASK;
+    return g_lcg_state;
 }
 
 /* ********************************************** Public functions definitions ******************************************* */
@@ -65,6 +69,11 @@ void point_generator_set_bounds(int32_t min_x, int32_t max_x, int32_t min_y, int
     g_max_x = max_x;
     g_min_y = min_y;
     g_max_y = max_y;
+}
+
+void point_generator_reset(void)
+{
+    g_lcg_state = LCG_SEED;
 }
 
 void generate_point(point_t *out)

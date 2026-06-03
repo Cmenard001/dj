@@ -43,6 +43,8 @@
                     "Ninja"
                 ],
                 "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+                "cmake.testPreset": "tests",
+                "cmake.ctest.allowParallelJobs": true,
                 "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
                 "C_Cpp.intelliSenseEngine": "default"
             }

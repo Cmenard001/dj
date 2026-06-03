@@ -50,6 +50,30 @@
                 "TARGET_NAME": "stm32mp15",
                 "SPECIFIC_CMAKE_PATH": "cmake/targets/stm32mp15.cmake"
             }
+        },
+        {
+            "name": "tests",
+            "displayName": "Linux + unit tests",
+            "inherits": "linux_preset",
+            "binaryDir": "${sourceDir}/build/tests",
+            "cacheVariables": {
+                "DJ_BUILD_TESTS": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "tests",
+            "configurePreset": "tests"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "tests",
+            "configurePreset": "tests",
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }

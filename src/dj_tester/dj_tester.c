@@ -368,6 +368,15 @@ static void build_result_filename(const char *hw_name, char *buf, size_t buf_len
 
 /* ********************************************** Public functions definitions ******************************************* */
 
+const dj_test_suite_config_t *dj_tester_get_suites(uint32_t *count)
+{
+    if (count != NULL)
+    {
+        *count = DJ_TESTER_NB_SUITES;
+    }
+    return g_suites;
+}
+
 void dj_tester_launch_tests()
 {
     /* Get hardware name */

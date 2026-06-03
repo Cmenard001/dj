@@ -16,6 +16,31 @@
             "detail": "CMake template build task"
         },
         {
+            "label": "Build docs (Doxygen)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build/linux_preset",
+                "--target",
+                "doxygen"
+            ],
+            "problemMatcher": [],
+            "detail": "Generate Doxygen HTML into build/linux_preset/docs/html"
+        },
+        {
+            "label": "Run unit tests",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "cmake --preset tests && cmake --build --preset tests && ctest --preset tests"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "detail": "Configure, build and run the GTest unit tests"
+        },
+        {
             "label": "stop-gdbserver-remote",
             "type": "shell",
             "command": "ssh",

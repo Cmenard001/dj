@@ -52,8 +52,6 @@ add_compile_definitions(DJ_TARGET_NAME="${TARGET_NAME}")
 ####################################################################################################
 
 add_sources(
-    main.c
-
     # DJ engine (new version)
     dj/dj_engine.c
     dj/dj_graph/dj_graph_graph.c
@@ -123,10 +121,32 @@ add_include_dirs(
     ${SRC_PREFIX}
     )
 
-# Specific include directories for the target
-include(${SPECIFIC_CMAKE_PATH})
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
+####################################################################################################
+# Platform-agnostic core library reused by every executable (per-target) and the unit tests.
+# The platform implementations of time_*/printf* are intentionally left out so that consumers
+# (target executable or test binary) provide them — they resolve at link time.
+####################################################################################################
+add_library(dj_core STATIC ${SRCS})
+target_include_directories(dj_core PUBLIC ${INCLUDE_DIRS})
 
 # Print the sources and include directories
 print_sources_and_include_dirs()
+
+# Build the target-specific executable (links against dj_core)
+include(${SPECIFIC_CMAKE_PATH})
+
+####################################################################################################
+# Documentation (Doxygen) — adds a non-ALL `doxygen` target when Doxygen is available
+####################################################################################################
+include(cmake/docs.cmake)
+
+####################################################################################################
+# Unit tests (GTest) — native Linux only, opt-in (off by default so cross-compile configures
+# and ordinary native builds don't fetch GoogleTest)
+####################################################################################################
+option(DJ_BUILD_TESTS "Build the GTest unit tests (native Linux only)" OFF)
+if(DJ_BUILD_TESTS AND TARGET_NAME STREQUAL "linux")
+    enable_language(CXX)     # GoogleTest (and the test sources) need a C++ compiler
+    enable_testing()
+    add_subdirectory(test)
+endif()
