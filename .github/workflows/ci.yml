@@ -17,10 +17,6 @@ permissions:
   pages: write
   id-token: write
 
-env:
-  # Reuse the devcontainer image as the CI image
-  IMAGE: ghcr.io/${{ github.repository }}/ci:latest
-
 jobs:
   # ---------------------------------------------------------------------------
   # Build & push the devcontainer image so the other jobs run in the exact same
@@ -28,8 +24,16 @@ jobs:
   # ---------------------------------------------------------------------------
   image:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute image name (must be lowercase for GHCR)
+        id: vars
+        run: echo "image=ghcr.io/${REPO,,}/ci:latest" >> "$GITHUB_OUTPUT"
+        env:
+          REPO: ${{ github.repository }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -44,7 +48,7 @@ jobs:
           context: .
           file: .devcontainer/Dockerfile
           push: true
-          tags: ${{ env.IMAGE }}
+          tags: ${{ steps.vars.outputs.image }}
 
   # ---------------------------------------------------------------------------
   # Build the native Linux target and run the GTest unit tests.
@@ -53,7 +57,7 @@ jobs:
     needs: image
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/ci:latest
+      image: ${{ needs.image.outputs.image }}
       # Run as root: avoids permission issues with the checkout (the image
       # otherwise switches to the unprivileged `dev` user).
       options: --user root
@@ -80,7 +84,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/ci:latest
+      image: ${{ needs.image.outputs.image }}
       options: --user root
     environment:
       name: github-pages
